@@ -1,0 +1,50 @@
+  frozen inputs unchanged                                        ok  19 files
+  library cache is this image's                                  ok  sha256:e5d68b0139b5
+  exp32r/Chain.v is what exp32r/gen_range.py emits               ok  
+  fresh root holds no compiled file                              ok  4 folders copied as sources
+  compile f32/F32_Statement                                      ok  exit 0
+  compile f32/F32                                                ok  exit 0
+  compile f32/Identity                                           ok  exit 0
+  compile p32/Graphs                                             ok  exit 0
+  compile p32/P32_Statement                                      ok  exit 0
+  compile p32/T32                                                ok  exit 0
+  compile p32/Funcs                                              ok  exit 0
+  compile p32/Hypot                                              ok  exit 0
+  compile p32/Identity                                           ok  exit 0
+  compile exp32/Graph                                            ok  exit 0
+  compile exp32/EXP32_Statement                                  ok  exit 0
+  compile exp32/Taylor                                           ok  exit 0
+  compile exp32/Exp32                                            ok  exit 0
+  compile exp32/Identity                                         ok  exit 0
+  compile exp32r/RANGE_Statement                                 ok  exit 0
+  compile exp32r/Chain                                           ok  exit 0
+  compile exp32r/Range                                           ok  exit 0
+  compile exp32r/Identity                                        ok  exit 0
+  identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Graphs                                       ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/P32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/T32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Funcs                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Hypot                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Graph                                      ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/EXP32_Statement                            ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Taylor                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Exp32                                      ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Identity                                   ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32r/RANGE_Statement                           ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32r/Chain                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32r/Range                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32r/Identity                                  ok  exit 0, unsafe sections <none>
+  sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e, p32/Graphs.v 055b4602b3b9, p32/P32_Statement.v a1b2af32031e, p32/T32.v 360b5f8503fe, p32/Funcs.v 0c3ca7b51f9b, p32/Hypot.v 95590c2c88d3, p32/Identity.v ca2b754f7d2c, exp32/Graph.v 1a190dc95ea8, exp32/EXP32_Statement.v 19d1fb594473, exp32/Taylor.v 9d588232966d, exp32/Exp32.v d550c2c86e43, exp32/Identity.v 598e5d702666, exp32r/RANGE_Statement.v 281b28c227a8, exp32r/Chain.v 7ab0bb2b839a, exp32r/Range.v c2736e2a0042, exp32r/Identity.v 3505af082e9d
+  closure: every MKF library is one compiled and rechecked above ok  14 of ours in the closure
+  closure: every outside library passed coqchk -norec, unsafe <none> ok  303 libraries, 0 newly checked
+  plant admitted refused                                         ok  compiled; PA: unexpected assumption: Range.fmax_format : Generic_fmt.generic_format Zaux.radix2 (FLT.FLT_exp (BinNums.Zneg (BinNums.xI (BinNums.xO (BinNums.xI (BinNums.xO (BinNums.xI (
+  plant hand-edited-chain refused                                ok  the planted file is not the generator's output
+  plant lower-constant refused                                   ok  Chain exit 1: File "/tmp/gate-plant/lower-constant/exp32r/Chain.v", line 98, characters 33-36: Error: Tactic failure: Cannot find witness.
+  plant shadow refused                                           ok  Identity exit 1: range Range.exp32_sharp" has type "Range.EXP32_RANGE /\ Range.EXP32_SHARP" while it is expected to have type "RANGE_Statement.EXP32_RANGE /\ RANGE_Statement.EXP32_SHARP".
+  plant upper-constant refused                                   ok  Chain exit 1: File "/tmp/gate-plant/upper-constant/exp32r/Chain.v", line 47, characters 33-36: Error: Tactic failure: Cannot find witness.
+EXP32R GATE HELD: 48 of 48

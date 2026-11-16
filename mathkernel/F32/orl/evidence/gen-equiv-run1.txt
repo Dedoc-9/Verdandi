@@ -1,0 +1,21 @@
+gen/sweep.c sha256 9636be961f77f6595df539a2dbe0a8b0e759e2a506a09925b665c9f58be2ddb6; gen_equiv.c sha256 39ae4c74716d3e8b1123977386b3986295ac7a476b471a95a7249c3541118ed3; clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)
+build: clang -O2 -ffp-contract=off -fno-math-errno -D_CRT_SECURE_NO_WARNINGS gen_equiv.c -o gen_equiv.exe -> exit 0
+build: clang -O2 -ffp-contract=off -fno-math-errno -D_CRT_SECURE_NO_WARNINGS -DPLANT_REF gen_equiv.c -o gen_equiv_plant.exe -> exit 0
+gen-equiv-9636be961f77f659-39ae4c74.log: 128 chunks run now, 0 errors, 128 lines
+sqrt32   chunks 64/64 each once over 00000000..7fffffff: True | per-chunk counts as the bit patterns give: True | inputs 2139095040 (expected 2139095040) | differ 0
+rsqrt32  chunks 64/64 each once over 00000000..7fffffff: True | per-chunk counts as the bit patterns give: True | inputs 2139095039 (expected 2139095039) | differ 0
+gen-equiv-plant-9636be961f77f659-39ae4c74.log: 128 chunks run now, 0 errors
+plant (the reference of rsqrt32 is narrow(1.0 / x)): rsqrt32 inputs 2139095039, differ 2139095037, in 64 of 64 chunks (first 00000001); sqrt32 inputs 2139095040, differ 0
+  ok   gen/sweep.c holds the swept expression, its narrow and the loop's two domain lines, each exactly once
+  ok   gen/sweep.c holds f_sqrt32 and f_rsqrt32 as read here, each exactly once, and no other definition of either
+  ok   the test program's loop has the sweep's two domain lines, character for character
+  ok   the test program's reference functions hold the swept expressions (sqrt(x); 1.0 / sqrt(x); narrow(y))
+  ok   the test program includes gen/sweep.c itself and defines no narrow, f_sqrt32 or f_rsqrt32 of its own
+  ok   sqrt32: every chunk logged exactly once, counts as predicted, 2139095040 inputs
+  ok   sqrt32: the generated function and the swept expression differ on 0 inputs
+  ok   rsqrt32: every chunk logged exactly once, counts as predicted, 2139095039 inputs
+  ok   rsqrt32: the generated function and the swept expression differ on 0 inputs
+  ok   plant: every chunk of rsqrt32 reports differences (over the whole sweep, 2139095039 inputs)
+  ok   plant: sqrt32, which it does not touch, differs on 0 of 2139095040 inputs
+  ok   no chunk failed to run
+GENERATED = SWEPT HELD: sqrt32 2139095040 inputs 0 differ; rsqrt32 2139095039 inputs 0 differ (plant: rsqrt32 differs on 2139095037 of 2139095039; program 9636be961f77f659)

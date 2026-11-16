@@ -1,0 +1,23 @@
+# In an exported copy of the 243 staged files (manifest sha256 fbfb7eb86b389f0e056e477223ac378d83c25f8a489a354c11b9bfe15913019a): the regeneration
+# step and the two test writers, compared with the staged records. One machine; clang as the first line of the record names it.
+narrow_regress.py as staged (no regeneration): exit 1, 2484 bytes printed, no verdict line: True
+emit.py emit: exit 0: emitted gen/sweep.c and 4 corpus laws
+emit2.py emit: exit 0: emitted gen/sweep2.c and gen/corpus_exp32.orl (206 inputs)
+regenerated gen/sweep.c: sha256 begins 9636be961f77f659 (IS the key the records carry)
+regenerated gen/sweep2.c: sha256 begins fe58a39d58a9618c (IS the key the records carry)
+created the folder evidence/fma
+narrow_regress.py: exit 0, console 3593 bytes, BYTE FOR BYTE the staged record narrow-regress-run3.txt (3593 bytes)
+narrow_regress.py: exit 0, console 3593 bytes, BYTE FOR BYTE the staged record narrow_regress-main-rerun.txt (3593 bytes)
+narrow_regress.py: exit 0, console 3593 bytes, DIFFERS FROM the staged record narrow-regress-run1.txt (3056 bytes)
+  last line: NARROW REGRESSION HELD: 32185 inputs; current differs on 0; old differs on 1744 (not sign of zero: 0); run-1 differs on 1742 (not sign of zero: 0); Python differs from C on 0
+fma_undertest.py: exit 0; its console:
+  | undertest_sweep.o: functions f_hypot32, f_rsqrt32, f_sqrt32, narrow
+  |   undefined symbols: _fltused
+  |   relocation targets: __real@3690000000000000, __real@3810000000000000, __real@39e8000000000000, __real@3ff0000000000000, __real@41c0000000800000, __real@b9e8000000000000, __xmm@7fffffffffffffff7fffffffffffffff, __xmm@80000000000000008000000000000000
+  |   instructions 87; call instructions 0; indirect jumps 0; fused multiply-add 0; sqrtsd 3
+  | undertest_sweep2.o: functions g_exp32, narrow
+  |   undefined symbols: _fltused
+  |   relocation targets: __real@3690000000000000, __real@3810000000000000, __real@39e8000000000000, __real@3f30000000000000, __real@401c000000000000, __real@4045000000000000, __real@406a400000000000, __real@408a400000000000, __real@40a3b00000000000, __real@40b3b00000000000, __real@41c0000000800000, __real@b9e8000000000000, __real@c064000000000000, __xmm@7fffffffffffffff7fffffffffffffff, __xmm@80000000000000008000000000000000
+  |   instructions 53; call instructions 0; indirect jumps 0; fused multiply-add 0; sqrtsd 0
+staged files re-hashed after the runs: 243, changed 0
+console holds a local path: NO

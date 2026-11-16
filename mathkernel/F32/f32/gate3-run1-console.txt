@@ -1,0 +1,18 @@
+  frozen inputs unchanged                                        ok  11 files
+  library cache is this image's                                  ok  sha256:e5d68b0139b5
+  fresh root holds no compiled file                              ok  1 folders copied as sources
+  compile f32/F32_Statement                                      ok  exit 0
+  compile f32/F32                                                ok  exit 0
+  compile f32/Identity                                           ok  exit 0
+  identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+  sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e
+  closure: every MKF library is one compiled and rechecked above ok  3 of ours in the closure
+  closure: every outside library passed coqchk -norec, unsafe <none> ok  295 libraries, 0 newly checked
+  plant admitted refused                                         ok  compiled; PA: unexpected assumption: F32.F32_rel : F32_Statement.F32_REL; expected assumption absent: ClassicalDedekindReals.sig_forall_dec : forall P : nat -> Prop, (forall n : nat, {
+  plant guard refused                                            ok  compiled; PA: unexpected line: F32.loop is assumed to be guarded.
+  plant loose-constant refused                                   ok  F32 exit 1: File "/tmp/gate-plant/loose-constant/f32/F32.v", line 38, characters 34-37: Error: Tactic failure: Cannot find witness.
+  plant shadow refused                                           ok  Identity exit 1: te-plant/shadow/f32/Identity.v", line 3, characters 61-80: Error: The term "F32.F32_rel" has type "F32.F32_REL" while it is expected to have type "F32_Statement.F32_REL".
+F32 GATE HELD: 16 of 16

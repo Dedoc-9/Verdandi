@@ -1,0 +1,26 @@
+build: clang -O2 -ffp-contract=off -fno-math-errno -D_CRT_SECURE_NO_WARNINGS narrow_regress.c -o narrow_regress.exe -> exit 0  (clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1))
+inputs: 32185 in 12 groups (32130 distinct bit patterns); seed 20261114
+n      cur    old    run1    group    (columns: inputs, then inputs where each variant differs from (double)(float)v: current, old, run-1)
+2      0      1      0       zeros of both signs
+6      0      2      2       +-2^-150 and its binary64 neighbours
+2      0      0      0       +-2^-149
+4      0      1      1       +-(1/2)*2^-149 and +-(3/2)*2^-149
+9      0      2      2       the smallest negative binary32 (-2^-149), its binary64 neighbours, and the tie points on each side of it (-2^-150, -1.5*2^-149) with theirs
+10     0      5      5       the smallest binary64 magnitudes (+-2^-1074, +-2^-1022) and +-2^-151, +-2^-160, +-2^-200
+12048  0      3      2       seeded: 1506 binary32 subnormals k*2^-149 and the tie (k+1/2)*2^-149 after each with its binary64 neighbours, both signs
+6000   0      730    730     seeded: 3000 binary64 values with exponents -160..-121, both signs
+2000   0      1000   1000    seeded: 1000 binary64 values of magnitude at most 2^-150 (they round to zero), both signs
+12054  0      0      0       around 2^-126: the threshold, its neighbours and ties, and seeded values and ties in [2^-127, 2^-125), both signs
+30     0      0      0       ties around 1: 1 +- 2^-24, 1 +- 2^-25 and their binary64 neighbours (and 1 itself), both signs
+20     0      0      0       the largest binary32 magnitudes: the largest and the one before it, their binary64 neighbours, the tie between them, and the last binary64 value before the conversion overflows
+current narrow:                differs from the IEEE cast on 0 of 32185 inputs; differences that are not the sign of zero: 0
+old narrow (no first branch):  differs from the IEEE cast on 1744 of 32185 inputs; differences that are not the sign of zero: 0; first: input 8000000000000000 gives 0000000000000000, cast 8000000000000000
+run-1 narrow (emit-run1.py):   differs from the IEEE cast on 1742 of 32185 inputs; differences that are not the sign of zero: 0; first: input b68fffffffffffff gives 0000000000000000, cast 8000000000000000
+Python py_narrow: differs from the C current narrow on 0 inputs; from Python's own float conversion on 0; Python's conversion differs from C's on 0
+  ok   the current narrow differs on 0 inputs
+  ok   the old variant differs on at least one input
+  ok   every difference of the old variant is in the sign of zero
+  ok   the run-1 variant differs on at least one input, each in the sign of zero
+  ok   py_narrow equals the C current narrow on every input
+  ok   py_narrow equals Python's float conversion, which equals C's, on every input
+NARROW REGRESSION HELD: 32185 inputs; current differs on 0; old differs on 1744 (not sign of zero: 0); run-1 differs on 1742 (not sign of zero: 0); Python differs from C on 0

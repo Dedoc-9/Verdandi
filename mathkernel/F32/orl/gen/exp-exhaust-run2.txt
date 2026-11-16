@@ -1,0 +1,7 @@
+# main session rerun, whole log under one script: exp_exhaust.py sha256 e80b4f1a9ac71aff420b15f93fa819e040cc79e15e90c8287baf82f1448d6ce5
+# started 2026-11-14 15:39
+premises of the three shortcuts and the zero rule hold in decimal (10 checks)
+exp-exhaust-fe58a39d58a9618c.log: 4096 of 4096 chunks logged (4096 this run, 2312 s), 0 left
+EXP32 EXHAUSTIVE (decimal) HELD: chunks 4096, inputs 3258020376, shortcut inputs 2645557250, decimal-checked inputs 612463126, not faithful 0, ambiguous 0
+# invocation 1 exit 0
+# ended 2026-11-14 16:18

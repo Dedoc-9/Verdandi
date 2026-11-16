@@ -1,0 +1,2 @@
+emitted gen-nm/sweep.c and 4 corpus laws
+emitted gen-nm/sweep2.c and gen-nm/corpus_exp32.orl (206 inputs)

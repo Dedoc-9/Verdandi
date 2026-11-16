@@ -1,0 +1,2 @@
+hypot32 sampled check: 1000000 pairs; not faithful: 0; plant (one step up) flagged on 124891 of the pairs it touched
+HYPOT32 SAMPLE HELD

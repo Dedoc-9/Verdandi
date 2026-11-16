@@ -1,0 +1,8 @@
+plants (must be flagged):
+narrow 80000000 8000ffff n=327680 bad_narrow=196608 unfaithful=0 not_cr=0 first=80000000
+sqrt32 3f800000 3f80ffff n=65536 bad_narrow=0 unfaithful=65536 not_cr=65536 first=3f800000
+rsqrt32 3f800000 3f80ffff n=65536 bad_narrow=0 unfaithful=65536 not_cr=0 first=3f800000
+narrow   chunks 64/64 inputs 21390950393 | narrow differs from IEEE cast: 0 | not faithful: 0 | differs from correctly rounded: n/a | ok
+rsqrt32  chunks 64/64 inputs 2139095039 | narrow differs from IEEE cast: 0 | not faithful: 0 | differs from correctly rounded: n/a | ok
+sqrt32   chunks 64/64 inputs 2139095040 | narrow differs from IEEE cast: 0 | not faithful: 0 | differs from correctly rounded: 0 | ok
+SWEEPS HELD (program 9636be961f77f659)

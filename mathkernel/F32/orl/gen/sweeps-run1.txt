@@ -1,0 +1,4 @@
+narrow   chunks 64/64 inputs 21390950393 | narrow differs from IEEE cast: 2 | not faithful: 0 | differs from correctly rounded: n/a | FAIL
+rsqrt32  chunks 64/64 inputs 2139095039 | narrow differs from IEEE cast: 0 | not faithful: 0 | differs from correctly rounded: n/a | ok
+sqrt32   chunks 64/64 inputs 2139095040 | narrow differs from IEEE cast: 0 | not faithful: 0 | differs from correctly rounded: 0 | ok
+SWEEPS FAILED (program a28f24687031a586)

@@ -1,0 +1,8 @@
+ieee64 42e3891e153bafae200b7e3b48c2573fbc4406d58fa941bd0bf1f672f51ddb42
+# The line above is the anchor: the sha256 of mkf/ieee64/FROZEN4.txt (80 entries), as gate/freeze4.py printed it
+# ("wrote ieee64/FROZEN4.txt: 80 entries" / "anchor 42e3891e..."), recorded here, outside the tree, on 2026-11-15
+# before the gate's run 1. The run is given it as ANCHOR. The run is also given
+# STATEMENT=7cbcac51c912286bc9ea64ef2880cf7685ff2027e02902a5ceeae3e693e428de (the statement's sha256, from the task).
+# Files the list holds, for reference: gate/gate4.py 21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3;
+# ieee64/gate.json f0aa630e34ab1f832d6a0f1aee3cc4270c8c384bdba16d03f2936199e1672e25, which names
+# ieee64/gate_ieee64.py ac172a438cb555c489989ec538521acb6e0234a3d15d3707291403a749ecba6e (the gate that runs).

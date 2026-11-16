@@ -1,0 +1,13 @@
+mkf/orl/gen-nm/sweep2.c:85:51: warning: 'sscanf' is deprecated: This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [-Wdeprecated-declarations]
+   85 |     while (fgets(line, sizeof line, stdin)) { if (sscanf(line, "%llx", &a) == 1) printf("%016llx\n", (unsigned long long)bits(narrow(g_exp32(frombits(a))))); }
+      |                                                   ^
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\stdio.h:2239:20: note: 'sscanf' has been explicitly marked deprecated here
+ 2239 |     _Check_return_ _CRT_INSECURE_DEPRECATE(sscanf_s)
+      |                    ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\vcruntime.h:368:55: note: expanded from macro '_CRT_INSECURE_DEPRECATE'
+  368 |         #define _CRT_INSECURE_DEPRECATE(_Replacement) _CRT_DEPRECATE_TEXT(    \
+      |                                                       ^
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\vcruntime.h:358:47: note: expanded from macro '_CRT_DEPRECATE_TEXT'
+  358 | #define _CRT_DEPRECATE_TEXT(_Text) __declspec(deprecated(_Text))
+      |                                               ^
+1 warning generated.

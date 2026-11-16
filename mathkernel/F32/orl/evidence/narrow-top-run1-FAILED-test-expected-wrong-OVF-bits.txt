@@ -1,0 +1,43 @@
+gen/sweep.c sha256 9636be961f77f6595df539a2dbe0a8b0e759e2a506a09925b665c9f58be2ddb6; narrow_top.c sha256 163b69aa987406fb359283bb8f9704d5dd5eaeac210254b92e28c15a78256034; clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1)
+build: clang -O2 -ffp-contract=off -fno-math-errno -D_CRT_SECURE_NO_WARNINGS narrow_top.c -o narrow_top.exe -> exit 0
+build: clang -O2 -ffp-contract=off -fno-math-errno -D_CRT_SECURE_NO_WARNINGS -DPLANT_TOP narrow_top.c -o narrow_top_plant.exe -> exit 0
+  A n=33554432 differ=0 first=0000000000000000
+  B n=67108866 differ=0 first=0000000000000000 left_out_by_the_sweep=33554434
+  C sign=+ n=16777217 is_2p128=16777217 finite=16777217 binary32=0 cast_is_inf=16777217 same_as_cast=0 lowest=47f0000000000000 highest=47f0000000000000 first_other=0000000000000000
+  C sign=- n=16777217 is_2p128=16777217 finite=16777217 binary32=0 cast_is_inf=16777217 same_as_cast=0 lowest=c7f0000000000000 highest=c7f0000000000000 first_other=0000000000000000
+named values, as seen (required of nothing):
+  named FLT_MAX                      v=47efffffe0000000 narrow=47efffffe0000000 cast=47efffffe0000000
+  named OVF-1step                    v=47efffffefffffff narrow=47efffffe0000000 cast=47efffffe0000000
+  named OVF                          v=47effffff0000000 narrow=47f0000000000000 cast=7ff0000000000000
+  named OVF+1step                    v=47effffff0000001 narrow=47f0000000000000 cast=7ff0000000000000
+  named 2^128                        v=47f0000000000000 narrow=47f0000000000000 cast=7ff0000000000000
+  named 3*2^127                      v=47f8000000000000 narrow=47f8000000000000 cast=7ff0000000000000
+  named 2^200                        v=4c70000000000000 narrow=4c70000000000000 cast=7ff0000000000000
+  named 2^994                        v=7e10000000000000 narrow=7e10000000000000 cast=7ff0000000000000
+  named 2^995-1step                  v=7e1fffffffffffff narrow=fff8000000000000 cast=7ff0000000000000
+  named 2^995                        v=7e20000000000000 narrow=fff8000000000000 cast=7ff0000000000000
+  named 1e300                        v=7e37e43c8800759c narrow=fff8000000000000 cast=7ff0000000000000
+  named DBL_MAX                      v=7fefffffffffffff narrow=fff8000000000000 cast=7ff0000000000000
+  named infinity                     v=7ff0000000000000 narrow=fff8000000000000 cast=7ff0000000000000
+  named -infinity                    v=fff0000000000000 narrow=fff8000000000000 cast=fff0000000000000
+  named NaN                          v=7ff8000000000000 narrow=7ff8000000000000 cast=7ff8000000000000
+plant program:
+  A n=33554432 differ=1 first=47efffffefffefff
+  B n=67108866 differ=0 first=0000000000000000 left_out_by_the_sweep=33554434
+  C sign=+ n=16777217 is_2p128=16777216 finite=16777216 binary32=0 cast_is_inf=16777217 same_as_cast=1 lowest=47f0000000000000 highest=7ff0000000000000 first_other=47effffff0001001
+  C sign=- n=16777217 is_2p128=16777217 finite=16777217 binary32=0 cast_is_inf=16777217 same_as_cast=0 lowest=c7f0000000000000 highest=c7f0000000000000 first_other=0000000000000000
+  ok   gen/sweep.c holds the narrow tested here exactly once and no other definition of narrow
+  ok   gen/sweep.c still leaves out |y| >= FLT_MAX in its narrow sweep (the line this test stands beside)
+  ok   the test program includes gen/sweep.c itself and defines no narrow of its own
+  ok   A: all 33554432 values below OVF were visited
+  ok   A: narrow equals the conversion on every one
+  ok   B: all 67108866 values within 2^24 steps of FLT_MAX were visited, 33554434 of them left out by the sweep
+  ok   B: narrow equals the conversion on every one
+  ok   C: OVF and the 2^24 values above it were visited, each sign (16777217 a sign)
+  ok   C, as documented: narrow returns exactly +2^128 on every positive value and -2^128 on every negative one
+  ok   C, as documented: those results are finite and none is a binary32 number
+  ok   C, as documented: the conversion returns infinity (of v's sign) on every one, so narrow equals it on none
+  FAIL plant: the moved result of A is reported, exactly one difference, at OVF - 4097 steps
+  FAIL plant: the replaced result of C is reported, exactly one positive result that is not 2^128, at OVF + 4097 steps
+  ok   plant: part B, which it does not touch, is as in the honest run
+NARROW TOP FAILED: below OVF 33554432 values, differ from the conversion 0; around FLT_MAX 67108866 values, differ 0; at and above OVF 33554434 values, narrow returns +-2^128 on 33554434 (finite, not binary32) where the conversion returns infinity on 33554434

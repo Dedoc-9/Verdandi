@@ -1,0 +1,48 @@
+p32/Graphs.v sha256 055b4602b3b94aa0418fe2888e4ce89125bea979f028103fa7fb722a974a936c
+exp32/Graph.v sha256 1a190dc95ea8cd613eaf92c971fa8433d7c2e37e9d51708970e95efb9bacfcbe
+gen/sweep.exe sha256 6ed70f8f6d803d533b2ea94c98604a7af26dab5c87b10addd90aeb11e55a3994
+gen/sweep2.exe sha256 ef9d229ae44cc401f29c1ce9073525db0df9990d6badc99d1d30e73621128b4e
+definitions read: KK/0, MM/0, TT/0, HH/0, narrow/1, g_narrow/1, g_sqrt32/1, g_rsqrt32/1, g_hypot32/2, exp32_red/1, exp32_poly/1, exp32_sq/1, g_exp32/1 (9 of 9 in Graphs.v, 4 of 4 in Graph.v)
+narrow    30036 inputs | C = Coq graph, bit for bit:  29848 | equal, sign of zero differs:  188 | DIFFERENT:      0 | C not finite: 0
+sqrt32     6011 inputs | C = Coq graph, bit for bit:   6011 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+rsqrt32    6010 inputs | C = Coq graph, bit for bit:   6010 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+hypot32    8000 inputs | C = Coq graph, bit for bit:   8000 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+exp32      5516 inputs | C = Coq graph, bit for bit:   5516 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+the model's narrow against rounding to binary32 in FLT(-149, 24), exactly, on the narrow inputs: 0 of 30036 differ
+hypot32 pairs among these whose model value is at or above 2^128 (the graph and the program still agree there): 6
+measured, required of nothing: Graphs.v with KK 536870913 -> 536870912 differs from the program on 0, 0, 0, 0, 0 inputs (narrow, sqrt32, rsqrt32, hypot32, exp32): an equivalent mutant on these inputs; this comparison says nothing of that constant's last bit
+  plant narrow    30036 inputs | C = Coq graph, bit for bit:   6620 | equal, sign of zero differs:  188 | DIFFERENT:  23228 | C not finite: 0 | first: ['0x1.0000010000000p+0'] -> model 0x1.0000010000000p+0, C 0x1.0000000000000p+0
+  plant sqrt32     6011 inputs | C = Coq graph, bit for bit:   3014 | equal, sign of zero differs:    0 | DIFFERENT:   2997 | C not finite: 0 | first: ['0x1.0000020000000p-126'] -> model 0x1.0000010000000p-63, C 0x1.0000000000000p-63
+  plant rsqrt32    6010 inputs | C = Coq graph, bit for bit:   3090 | equal, sign of zero differs:    0 | DIFFERENT:   2920 | C not finite: 0 | first: ['0x1.fffffc0000000p-127'] -> model 0x1.0000010000000p+63, C 0x1.0000020000000p+63
+  plant hypot32    8000 inputs | C = Coq graph, bit for bit:   6701 | equal, sign of zero differs:    0 | DIFFERENT:   1299 | C not finite: 0 | first: ['-0x1.0388aa0000000p+72', '0x1.51c9280000000p+79'] -> model 0x1.51cab70000000p+79, C 0x1.51cab60000000p+79
+  plant exp32      5516 inputs | C = Coq graph, bit for bit:   4414 | equal, sign of zero differs:    0 | DIFFERENT:   1102 | C not finite: 0 | first: ['0x1.0000000000000p+0'] -> model 0x1.5bf0a90000000p+1, C 0x1.5bf0a80000000p+1
+  plant narrow    30036 inputs | C = Coq graph, bit for bit:  29848 | equal, sign of zero differs:  188 | DIFFERENT:      0 | C not finite: 0
+  plant sqrt32     6011 inputs | C = Coq graph, bit for bit:   6011 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant rsqrt32    6010 inputs | C = Coq graph, bit for bit:      0 | equal, sign of zero differs:    0 | DIFFERENT:   6010 | C not finite: 0 | first: ['0x1.0000000000000p-149'] -> model 0x1.6a09e60000000p+75, C 0x1.6a09e60000000p+74
+  plant hypot32    8000 inputs | C = Coq graph, bit for bit:   8000 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant exp32      5516 inputs | C = Coq graph, bit for bit:   5516 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant narrow    30036 inputs | C = Coq graph, bit for bit:  29848 | equal, sign of zero differs:  188 | DIFFERENT:      0 | C not finite: 0
+  plant sqrt32     6011 inputs | C = Coq graph, bit for bit:   6011 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant rsqrt32    6010 inputs | C = Coq graph, bit for bit:   6010 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant hypot32    8000 inputs | C = Coq graph, bit for bit:   8000 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant exp32      5516 inputs | C = Coq graph, bit for bit:   3684 | equal, sign of zero differs:    0 | DIFFERENT:   1832 | C not finite: 0 | first: ['0x1.0000000000000p+0'] -> model 0x1.5bf0aa0000000p+1, C 0x1.5bf0a80000000p+1
+  plant narrow    30036 inputs | C = Coq graph, bit for bit:  29848 | equal, sign of zero differs:  188 | DIFFERENT:      0 | C not finite: 0
+  plant sqrt32     6011 inputs | C = Coq graph, bit for bit:   6011 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant rsqrt32    6010 inputs | C = Coq graph, bit for bit:   6010 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant hypot32    8000 inputs | C = Coq graph, bit for bit:   8000 | equal, sign of zero differs:    0 | DIFFERENT:      0 | C not finite: 0
+  plant exp32      5516 inputs | C = Coq graph, bit for bit:   3408 | equal, sign of zero differs:    0 | DIFFERENT:   2108 | C not finite: 0 | first: ['0x1.0000000000000p+0'] -> model 0x1.5c066a0000000p+1, C 0x1.5bf0a80000000p+1
+  ok   the three Notation lines of Graphs.v are the ones this evaluator implements, and Graph.v has none of its own
+  ok   every Definition of both texts was read (9 and 4), and they are the thirteen expected
+  ok   narrow: the program equals the graph on every one of 30036 inputs (29848 bit for bit, 188 in the sign of zero only)
+  ok   sqrt32: the program equals the graph on every one of 6011 inputs (6011 bit for bit, 0 in the sign of zero only)
+  ok   rsqrt32: the program equals the graph on every one of 6010 inputs (6010 bit for bit, 0 in the sign of zero only)
+  ok   hypot32: the program equals the graph on every one of 8000 inputs (8000 bit for bit, 0 in the sign of zero only)
+  ok   exp32: the program equals the graph on every one of 5516 inputs (5516 bit for bit, 0 in the sign of zero only)
+  ok   the model's narrow is rounding to binary32 on every narrow input
+  ok   plant Graphs.v: KK 536870913 -> 268435457: differences reported in narrow, sqrt32, rsqrt32, hypot32, exp32 (23228, 2997, 2920, 1299, 1102)
+  ok   plant Graphs.v: g_rsqrt32's 1 -> 2: differences reported in rsqrt32 (6010); the other functions as in the honest run
+  ok   plant Graph.v: exp32_poly's 2520 -> 2521: differences reported in exp32 (1832); the other functions as in the honest run
+  ok   plant Graph.v: exp32_red's 4096 -> 4095: differences reported in exp32 (2108); the other functions as in the honest run
+  ok   plant Graphs.v: Notation fexp64's 53 -> 24: refused by the Notation row
+  ok   the real files were not written: their bytes are as read at the start
+COQ GRAPH = C PROGRAM HELD: narrow 30036 inputs 0 differ (188 in the sign of zero only, accepted); sqrt32 6011 inputs 0 differ (0 in the sign of zero only, accepted); rsqrt32 6010 inputs 0 differ (0 in the sign of zero only, accepted); hypot32 8000 inputs 0 differ (0 in the sign of zero only, accepted); exp32 5516 inputs 0 differ (0 in the sign of zero only, accepted); plants caught 5 of 5

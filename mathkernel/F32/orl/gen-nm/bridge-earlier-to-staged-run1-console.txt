@@ -1,0 +1,39 @@
+emit.py ac1a747416d6140d -> emit_nm.py 1e1acb756bff4486
+emit2.py decb64f17078be02 -> emit2_nm.py a4eed0d914045ee0
+34e2ca3d6ac92358da17d716cf55106737941977b7385b2c44c3abec20e21655 *orl/gen/sweep.
+597813397118fe8e9645f9e11b12f9b12b80c9af1076c84a2f29ed41ad57956b *orl/gen/sweep2
+  ok    generated C names math.h nowhere
+  ok    new sweep.c builds (warnings: 1)
+        sweep undefined, old: __acrt_iob_func __stdio_common_vfprintf __stdio_common_vsscanf _fltused fgets frexp ldexp nextafter nextafterf strcmp strtoul 
+        sweep undefined, new: __acrt_iob_func __stdio_common_vfprintf __stdio_common_vsscanf _fltused fgets strcmp strtoul 
+  ok    new sweep.o asks for no math library name
+  ok    new sweep2.c builds (warnings: 1)
+        sweep2 undefined, old: __acrt_iob_func __stdio_common_vfprintf __stdio_common_vsscanf _fltused exp fgets nextafterf strcmp strtoul 
+        sweep2 undefined, new: __acrt_iob_func __stdio_common_vfprintf __stdio_common_vsscanf _fltused fgets strcmp strtoul 
+  ok    new sweep2.o asks for no math library name
+  ok    code of narrow in sweep.c: same bytes, 21 instructions [8a23cb21bece]
+  ok    code of f_narrow in sweep.c: same bytes, 21 instructions [b50322463157]
+  ok    code of f_sqrt32 in sweep.c: same bytes, 20 instructions [81e9a8b13387]
+  ok    code of f_rsqrt32 in sweep.c: same bytes, 24 instructions [18e5382a30e1]
+  ok    code of f_hypot32 in sweep.c: same bytes, 23 instructions [8632fba6f699]
+  ok    code of narrow in sweep2.c: same bytes, 21 instructions [8a23cb21bece]
+  ok    code of g_exp32 in sweep2.c: same bytes, 33 instructions [66d68d921ac7]
+  ok    plant: a changed narrow is seen as different code
+  ok    sweep narrow 00000000 0003ffff: same line (n=1310720 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep narrow 3f000000 3f03ffff: same line (n=1310720 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep narrow 7f7c0000 7f7fffff: same line (n=1310715 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep narrow 80000000 8003ffff: same line (n=1310720 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep narrow fffc0000 ffffffff: same line (n=0 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep sqrt32 00000000 0003ffff: same line (n=262144 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep sqrt32 3f000000 3f03ffff: same line (n=262144 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep sqrt32 7f7c0000 7f7fffff: same line (n=262144 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep rsqrt32 00000001 0003ffff: same line (n=262143 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep rsqrt32 3f000000 3f03ffff: same line (n=262144 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    sweep rsqrt32 7f7c0000 7f7fffff: same line (n=262144 bad_narrow=0 unfaithful=0 not_cr=0 first=00000000)
+  ok    corpus mode, old against new: CORPUS SAME: 1001126 results, five functions
+        Verdandi commit 577bc2a752ba1ed72bedb320c7d7decab99c1234
+  ok    check.py at the base passes (2 canaries caught)
+  ok    control: check.py REFUSES the five C files as generated today (5 lines)
+  ok    check.py PASSES with the five math.h-free C files (real sources scanned: 22)
+  ok    mkf untouched by this run (guard)
+CSIDE VERIFY HELD (run1)

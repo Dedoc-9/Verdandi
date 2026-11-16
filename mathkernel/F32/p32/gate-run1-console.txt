@@ -1,0 +1,25 @@
+  frozen inputs unchanged                                        ok  14 files
+  library cache is this image's                                  ok  sha256:e5d68b0139b5
+  p32/Graphs.v is what orl/emit.py emits                         ok  
+  compile Graphs                                                 ok  exit 0
+  compile P32_Statement                                          ok  exit 0
+  compile T32                                                    ok  exit 0
+  compile Funcs                                                  ok  exit 0
+  compile Hypot                                                  ok  exit 0
+  compile Identity                                               ok  exit 0
+  identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  coqchk -norec Graphs                                           ok  exit 0, unsafe sections <none>
+  coqchk -norec P32_Statement                                    ok  exit 0, unsafe sections <none>
+  coqchk -norec T32                                              ok  exit 0, unsafe sections <none>
+  coqchk -norec Funcs                                            ok  exit 0, unsafe sections <none>
+  coqchk -norec Hypot                                            ok  exit 0, unsafe sections <none>
+  coqchk -norec Identity                                         ok  exit 0, unsafe sections <none>
+  proof judged: Graphs.v 055b4602b3b9, P32_Statement.v a1b2af32031e, T32.v 360b5f8503fe, Funcs.v 0c3ca7b51f9b, Hypot.v 95590c2c88d3, Identity.v ca2b754f7d2c
+  closure: every library passed coqchk -norec, unsafe <none>     ok  303 libraries, 3 newly checked
+  plant admitted refused                                         ok  compiled; PA: unexpected assumption: Hypot.hypot32_faithful : P32_Statement.HYPOT32
+  plant guard refused                                            ok  compiled; PA: unexpected line: Hypot.loop is assumed to be guarded.
+  plant hand-edited-graph refused                                ok  the planted file is not the generator's output
+  plant magic-constant refused                                   ok  T32 exit 1: File "/tmp/gate-plant/magic-constant/p32/T32.v", line 74, characters 37-48: Error: Unable to unify "3 * bpow radix2 (51 + -149)" with "3 * bpow radix2 (-99)".
+  plant shadow refused                                           ok  Identity exit 1: \ P32_Statement.RSQRT32 /\ Hypot.HYPOT32" while it is expected to have type "P32_Statement.T32 /\ P32_Statement.SQRT32 /\ P32_Statement.RSQRT32 /\ P32_Statement.HYPOT32".
+  plant split-constant refused                                   ok  T32 exit 1: File "/tmp/gate-plant/split-constant/p32/T32.v", line 138, characters 64-68: Error: Tactic failure: not a valid ring equation.
+P32 GATE HELD: 23 of 23

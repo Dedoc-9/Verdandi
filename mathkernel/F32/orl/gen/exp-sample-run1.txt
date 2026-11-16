@@ -1,0 +1,2 @@
+exp32 sampled check: 1000000 inputs; not faithful: 0; ambiguous: 0; plant (two steps up) flagged on 177 of the 177 results it touched
+EXP32 SAMPLE HELD

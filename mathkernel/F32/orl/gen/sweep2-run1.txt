@@ -1,0 +1,2 @@
+exp32 (sweep2.exe) chunks 256/256 inputs 3258020376 of 3258020376 | narrow differs from IEEE cast: 0 | not faithful: 0 | ambiguous: 0 | differs from the rounded runtime exp: 1714
+SWEEP HELD (program fe58a39d58a9618c)

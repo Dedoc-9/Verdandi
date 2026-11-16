@@ -1,0 +1,274 @@
+FMA CONTRACTION PLANT: the tier's five functions built with fused multiply-add, against the tier's references
+clang version 22.1.8 (https://github.com/llvm/llvm-project ca7933e47d3a3451d81e72ac174dcb5aa28b59d1); Target: x86_64-pc-windows-msvc; llvm-objdump LLVM version 22.1.8; Python 3.14
+this test: orl/evidence/fma_plant.py sha256 0fbdae5e3bd97e83d4100c6c58f2e9c3059dbf8299a826a916cec40f37232a5e
+the tier's files this run reads (sha256, first 16): orl/emit.py ac1a747416d6140d; orl/emit2.py decb64f17078be02; orl/gen/sweep.c 9636be961f77f659; orl/gen/sweep2.c fe58a39d58a9618c; orl/gen/sweep.exe 6ed70f8f6d803d53; orl/gen/sweep2.exe ef9d229ae44cc401; p32/Graphs.v 055b4602b3b94aa0; exp32/Graph.v 1a190dc95ea8cd61; orl/evidence/graph_agree.py 2643b824cada145a; orl/evidence/narrow_regress.py 9a4d739896b9ca7c; orl/hypot_check2.py f061f99ac50de0a9
+
+1. generated in a temporary folder outside the tree by copies of orl/emit.py and orl/emit2.py (python -B emit.py emit; python -B emit2.py emit):
+   gen/sweep.c sha256 9636be961f77f6595df539a2dbe0a8b0e759e2a506a09925b665c9f58be2ddb6
+   gen/sweep2.c sha256 fe58a39d58a9618cecfadb8da6d942bd102ad564e1a548be782cd5b1ecc4dddf
+
+   contraction sites (a product that is an operand of an add or subtract), from the emitters' expression trees and the narrow line:
+   narrow   E = x                                  no site in E
+   sqrt32   E = sqrt(x)                            no site in E
+   rsqrt32  E = (1.0 / sqrt(x))                    no site in E
+   hypot32  E = sqrt(((x * x) + (y * y)))          1 site: ((x * x) + (y * y)) (either product can be the fused one)
+   exp32    22 steps; 6 sites: n = (42.0 + (r * n)), n = (210.0 + (r * n)), n = (840.0 + (r * n)), n = (2520.0 + (r * n)), n = (5040.0 + (r * n)), n = (5040.0 + (r * n)); no site in the other 16 steps (the clamp, x / 4096.0, 7.0 + r, n / 5040.0, twelve v * v)
+   narrow   (every function ends in it)  double c = KK * v; return c - (c - v);
+            one product, KK * v, with two uses: the outer subtraction c - (...) and the inner c - v. Each use is a site; fusing
+            both recomputes the product. The other branches have none: v * 0.0 is a product alone, (v + MM) - MM has no product.
+   across statements (the product in one statement, the add or subtract in a later one or, once inlined, in narrow; -ffp-contract=fast lets a compiler
+            fuse these, the C rule for one expression does not): in exp32 the twelfth v * v is narrow's v, an operand of its v + MM and of its c - v;
+            and x / 4096.0, where a compiler makes it x * 2^-12 (an exact product), is an operand of 7.0 + r (fused or not, the same value). In the
+            other functions narrow's v is a square root, a quotient or the input itself: no such site. Whether a compiler build here fuses one is read
+            from its instructions, under 2-3; the two of the twelfth v * v have explicit plants (x_mm, x_cv, with their control x_ctl); 7.0 + r has none.
+   not under test: the arithmetic of the generated harness (the sweeps' own reference side) and of the references.
+
+2-3. builds and their fused multiply-add instructions (llvm-objdump -d -r of the objects that are then linked and run):
+   normal   clang -O2 -ffp-contract=off -fno-math-errno   [the tier's flags]
+            narrow 21 instr, FMA 0; sqrt32 20 instr, FMA 0; rsqrt32 24 instr, FMA 0; hypot32 22 instr, FMA 0; exp32 49 instr, FMA 0; in the three objects together: 0
+   offmfma  clang -O2 -ffp-contract=off -fno-math-errno -mfma   [control: the tier's flags on a target that has FMA]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 19 instr, FMA 0; exp32 45 instr, FMA 0; in the three objects together: 0
+   fast     clang -O2 -ffp-contract=fast -mfma -fno-math-errno   [PLANT: the compiler contracts where it chooses]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 18 instr, FMA 1 (vfmadd231sd x1); exp32 39 instr, FMA 6 (vfmadd213sd x6); in the three objects together: 20
+   dropped  clang -O2 -mfma -fno-math-errno   [PLANT: the tier's flags without -ffp-contract=off, on a target that has FMA]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 18 instr, FMA 1 (vfmadd231sd x1); exp32 39 instr, FMA 6 (vfmadd213sd x6); in the three objects together: 20
+   n_outer  clang -O2 -ffp-contract=off -fno-math-errno -mfma; narrow: ... double c = KK * v; return __builtin_fma(KK, v, -(c - v));   [PLANT: explicit fma at the outer use of KK*v in narrow]
+            narrow 19 instr, FMA 1 (vfmsub231sd x1); sqrt32 19 instr, FMA 1 (vfmsub231sd x1); rsqrt32 21 instr, FMA 1 (vfmsub231sd x1); hypot32 20 instr, FMA 1 (vfmsub231sd x1); exp32 46 instr, FMA 1 (vfmsub231sd x1); in the three objects together: 17
+   n_inner  clang -O2 -ffp-contract=off -fno-math-errno -mfma; narrow: ... double c = KK * v; return c - __builtin_fma(KK, v, -v);   [PLANT: explicit fma at the inner use of KK*v in narrow]
+            narrow 18 instr, FMA 1 (vfmsub231sd x1); sqrt32 19 instr, FMA 1 (vfmsub231sd x1); rsqrt32 21 instr, FMA 1 (vfmsub231sd x1); hypot32 20 instr, FMA 1 (vfmsub231sd x1); exp32 46 instr, FMA 1 (vfmsub231sd x1); in the three objects together: 17
+   n_both   clang -O2 -ffp-contract=off -fno-math-errno -mfma; narrow: ... return __builtin_fma(KK, v, -__builtin_fma(KK, v, -v));   [PLANT: explicit fma at both uses of KK*v in narrow]
+            narrow 19 instr, FMA 2 (vfmsub231sd x2); sqrt32 19 instr, FMA 2 (vfmsub231sd x2); rsqrt32 21 instr, FMA 2 (vfmsub231sd x2); hypot32 20 instr, FMA 2 (vfmsub231sd x2); exp32 46 instr, FMA 2 (vfmsub231sd x2); in the three objects together: 34
+   x_ctl    clang -O2 -ffp-contract=off -fno-math-errno -mfma; exp32: narrow_sq(u): v = u * u; ... (v + MM) - MM; ... c - (c - v)   [control of the two plants below: exp32's twelfth v * v moved into narrow_sq, a copy of narrow; nothing fused]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 19 instr, FMA 0; exp32 46 instr, FMA 0; in the three objects together: 0
+   x_mm     clang -O2 -ffp-contract=off -fno-math-errno -mfma; exp32: narrow_sq(u): v = u * u; ... __builtin_fma(u, u, MM) - MM   [PLANT: explicit fma across statements in exp32, the twelfth v * v into narrow's v + MM]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 19 instr, FMA 0; exp32 46 instr, FMA 1 (vfmadd213sd x1); in the three objects together: 2
+   x_cv     clang -O2 -ffp-contract=off -fno-math-errno -mfma; exp32: narrow_sq(u): v = u * u; ... c - __builtin_fma(-u, u, c)   [PLANT: explicit fma across statements in exp32, the twelfth v * v into narrow's c - v]
+            narrow 17 instr, FMA 0; sqrt32 18 instr, FMA 0; rsqrt32 20 instr, FMA 0; hypot32 19 instr, FMA 0; exp32 46 instr, FMA 1 (vfnmadd213sd x1); in the three objects together: 2
+   dropped and fast: the five functions have the same instructions and constants in both builds: yes (so what the scan of every input finds for fast holds for dropped)
+   the arithmetic instructions of each function, in address order (m multiply, a add or subtract, d divide, q square root, F fused multiply-add):
+   normal   narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mmaqaamaa; exp32 mamamamamamamadmmmmmmmmmmmmaamaa
+   offmfma  narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mmaqaamaa; exp32 mamamamamamamadmmmmmmmmmmmmaamaa
+   fast     narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mFqaamaa; exp32 maFFFFFFdmmmmmmmmmmmmaamaa
+   dropped  narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mFqaamaa; exp32 maFFFFFFdmmmmmmmmmmmmaamaa
+   n_outer  narrow aamaF; sqrt32 qaamaF; rsqrt32 qdaamaF; hypot32 mmaqaamaF; exp32 mamamamamamamadmmmmmmmmmmmmaamaF
+   n_inner  narrow aamFa; sqrt32 qaamFa; rsqrt32 qdaamFa; hypot32 mmaqaamFa; exp32 mamamamamamamadmmmmmmmmmmmmaamFa
+   n_both   narrow aaFF; sqrt32 qaaFF; rsqrt32 qdaaFF; hypot32 mmaqaaFF; exp32 mamamamamamamadmmmmmmmmmmmmaaFF
+   x_ctl    narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mmaqaamaa; exp32 mamamamamamamadmmmmmmmmmmmmaamaa
+   x_mm     narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mmaqaamaa; exp32 mamamamamamamadmmmmmmmmmmmmFamaa
+   x_cv     narrow aamaa; sqrt32 qaamaa; rsqrt32 qdaamaa; hypot32 mmaqaamaa; exp32 mamamamamamamadmmmmmmmmmmmmaamFa
+   read with the generated text: every function ends in narrow's a a | m a a (v + MM, - MM | KK * v, c - v, c - ...); hypot32 begins m m a q (x * x, y * y, +, sqrt);
+   exp32 begins m a (x * 2^-12, 7.0 + r), then six m a (r * n, c + ...), d (n / 5040.0), twelve m (v * v). In fast and dropped an F stands for the m a it fused;
+   in the explicit plants of narrow, whose product has two uses, an F stands for one a and the m stays (n_outer, n_inner), or for each a with no m left (n_both);
+   in x_mm and x_cv the twelfth m stays too (narrow_sq needs v = u * u for its comparisons and for KK * v) and an F stands for v + MM, or for c - v.
+   exp32's x / 4096.0 is a multiplication by the constant 2^-12 in every build, n / 5040.0 its one division: yes
+   (the linked programs also hold the C runtime, whose own FMA paths are described in evidence/FMA-LINKED.md; not counted here)
+
+4. the scanner (one function as two builds made it, in one program, result bits against result bits):
+   its own check: sqrt32, normal against n_outer, patterns 3f800000..3f80ffff: the scanner reports 65528 of 65536 differing; the two programs run separately on the same inputs: 65528
+   exp32    normal against fast     every input of the function, patterns 00000000..42b17217 and 80000000..ff7fffff: 3258020376 inputs in 195 chunks, 2 differ: 41185934, c251681b
+   exp32    normal against n_inner  every input of the function, patterns 00000000..42b17217 and 80000000..ff7fffff: 3258020376 inputs in 195 chunks, 0 differ
+   sqrt32   normal against n_inner  every input of the function, patterns 00000000..7f7fffff: 2139095040 inputs in 128 chunks, 0 differ
+   rsqrt32  normal against n_inner  every input of the function, patterns 00000001..7f7fffff: 2139095039 inputs in 128 chunks, 0 differ
+   exp32    normal against x_ctl    every input of the function, patterns 00000000..42b17217 and 80000000..ff7fffff: 3258020376 inputs in 195 chunks, 0 differ
+   exp32    normal against x_mm     every input of the function, patterns 00000000..42b17217 and 80000000..ff7fffff: 3258020376 inputs in 195 chunks, 0 differ
+   exp32    normal against x_cv     every input of the function, patterns 00000000..42b17217 and 80000000..ff7fffff: 3258020376 inputs in 195 chunks, 0 differ
+
+5. input sets (deterministic) and references:
+   narrow     30036 inputs  graph_agree.inputs(), seed 20261114  [Python graph, Coq graph, IEEE conversion]
+   narrow       322 inputs  the corpus inputs the emitter writes, gen/corpus_narrow.json (what emit.py corpus compares on; its seed 20261114)  [Python graph, Coq graph, IEEE conversion]
+   narrow     32185 inputs  narrow_regress.inputs(), seed 20261114  [Python graph, Coq graph, IEEE conversion]
+   sqrt32      6011 inputs  graph_agree.inputs(), seed 20261114  [Python graph, Coq graph]
+   sqrt32       200 inputs  the corpus inputs the emitter writes, gen/corpus_sqrt32.json (what emit.py corpus compares on; its seed 20261114)  [Python graph, Coq graph]
+   rsqrt32     6010 inputs  graph_agree.inputs(), seed 20261114  [Python graph, Coq graph]
+   rsqrt32      200 inputs  the corpus inputs the emitter writes, gen/corpus_rsqrt32.json (what emit.py corpus compares on; its seed 20261114)  [Python graph, Coq graph]
+   hypot32     8000 inputs  graph_agree.inputs(), seed 20261114  [Python graph, Coq graph]
+   hypot32      198 inputs  the corpus inputs the emitter writes, gen/corpus_hypot32.json (what emit.py corpus compares on; its seed 20261114)  [Python graph, Coq graph]
+   hypot32  1150003 inputs  hypot_check2.sample(), seed 2026111402: pairs of finite binary32 numbers in its seven regimes and three known pairs  [Python graph]
+   hypot32        8 inputs  constructed, binary32 pairs: x = 1 - 2^-24 and y stepping down from 0.000345, hypotenuse just below 1 (aimed at narrow's inner site)  [Python graph, Coq graph]
+   hypot32       13 inputs  constructed, OUTSIDE the domain: binary64 pairs that are not binary32 numbers, near the binary32 tie 1 + 2^-24 (y = 0.6 + j * 2^-30, x near sqrt((1 + 2^-24)^2 - y^2))  [Python graph, Coq graph]
+   exp32       5516 inputs  graph_agree.inputs(), seed 20261114  [Python graph, Coq graph]
+   exp32        206 inputs  the corpus inputs the emitter writes, gen/corpus_exp32.json (what emit2.py corpus compares on; its seed 20261114)  [Python graph, Coq graph]
+   exp32          2 inputs  pinned in this file, binary32 patterns 41185934, c251681b: the inputs on which exp32 with its six polynomial steps fused differs from exp32, of all 3258020376 (held to what the scan under 4 finds now)  [Python graph, Coq graph]
+   and, build against build: every input of exp32 (3258020376), sqrt32 (2139095040) and rsqrt32 (2139095039), as listed under 4.
+   and, for narrow_sq by itself in the x_ builds (not inputs of exp32: values of u, the number its twelfth squaring squares): constructed, 8 binary64 values for x_mm, near the square root of a tie (k + 1/2) * 2^-149 of the grid v + MM rounds to; 8 binary64 values for x_cv, near the square root of a tie 1 + (2k + 1) * 2^-24 between two binary32 numbers
+
+6. each build against the references, on the inputs inside each function's domain (binary32 inputs; for narrow, binary64 values below the overflow threshold):
+   build    function  FMA    inputs | differ from   | differ from the Coq graph | differ from | 
+                                    | Python graph  | (of; sign of zero only)   | IEEE conv. | 
+   normal   narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | agrees
+   normal   sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | agrees
+   normal   rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | agrees
+   normal   hypot32     0   1158209 | 0             | 0 (of 8206; 0)            | -          | agrees
+   normal   exp32       0      5724 | 0             | 0 (of 5724; 0)            | -          | agrees
+   offmfma  narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | agrees
+   offmfma  sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | agrees
+   offmfma  rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | agrees
+   offmfma  hypot32     0   1158209 | 0             | 0 (of 8206; 0)            | -          | agrees
+   offmfma  exp32       0      5724 | 0             | 0 (of 5724; 0)            | -          | agrees
+   fast     narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | not contracted in this build
+   fast     sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | not contracted in this build
+   fast     rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | not contracted in this build
+   fast     hypot32     1   1158209 | 0             | 0 (of 8206; 0)            | -          | equivalent mutant on this input set
+   fast     exp32       6      5724 | 2             | 2 (of 5724; 0)            | -          | REFUSED
+   dropped  narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | not contracted in this build
+   dropped  sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | not contracted in this build
+   dropped  rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | not contracted in this build
+   dropped  hypot32     1   1158209 | 0             | 0 (of 8206; 0)            | -          | equivalent mutant on this input set
+   dropped  exp32       6      5724 | 2             | 2 (of 5724; 0)            | -          | REFUSED
+   n_outer  narrow      1     62543 | 40506         | 40506 (of 62543; 1935)    | 40506      | REFUSED
+   n_outer  sqrt32      1      6211 | 6201          | 6201 (of 6211; 0)         | -          | REFUSED
+   n_outer  rsqrt32     1      6210 | 6203          | 6203 (of 6210; 0)         | -          | REFUSED
+   n_outer  hypot32     1   1158209 | 739162        | 3262 (of 8206; 0)         | -          | REFUSED
+   n_outer  exp32       1      5724 | 2559          | 2559 (of 5724; 0)         | -          | REFUSED
+   n_inner  narrow      1     62543 | 2             | 2 (of 62543; 1935)        | 2          | REFUSED
+   n_inner  sqrt32      1      6211 | 0             | 0 (of 6211; 0)            | -          | equivalent mutant on this input set
+   n_inner  rsqrt32     1      6210 | 0             | 0 (of 6210; 0)            | -          | equivalent mutant on this input set
+   n_inner  hypot32     1   1158209 | 8             | 8 (of 8206; 0)            | -          | REFUSED
+   n_inner  exp32       1      5724 | 0             | 0 (of 5724; 0)            | -          | equivalent mutant on this input set
+   n_both   narrow      2     62543 | 40506         | 40506 (of 62543; 1935)    | 40506      | REFUSED
+   n_both   sqrt32      2      6211 | 6201          | 6201 (of 6211; 0)         | -          | REFUSED
+   n_both   rsqrt32     2      6210 | 6203          | 6203 (of 6210; 0)         | -          | REFUSED
+   n_both   hypot32     2   1158209 | 739162        | 3262 (of 8206; 0)         | -          | REFUSED
+   n_both   exp32       2      5724 | 2559          | 2559 (of 5724; 0)         | -          | REFUSED
+   x_ctl    narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | agrees
+   x_ctl    sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | agrees
+   x_ctl    rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | agrees
+   x_ctl    hypot32     0   1158209 | 0             | 0 (of 8206; 0)            | -          | agrees
+   x_ctl    exp32       0      5724 | 0             | 0 (of 5724; 0)            | -          | agrees
+   x_mm     narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | not contracted in this build
+   x_mm     sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | not contracted in this build
+   x_mm     rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | not contracted in this build
+   x_mm     hypot32     0   1158209 | 0             | 0 (of 8206; 0)            | -          | not contracted in this build
+   x_mm     exp32       1      5724 | 0             | 0 (of 5724; 0)            | -          | equivalent mutant on this input set
+   x_cv     narrow      0     62543 | 0             | 0 (of 62543; 1935)        | 0          | not contracted in this build
+   x_cv     sqrt32      0      6211 | 0             | 0 (of 6211; 0)            | -          | not contracted in this build
+   x_cv     rsqrt32     0      6210 | 0             | 0 (of 6210; 0)            | -          | not contracted in this build
+   x_cv     hypot32     0   1158209 | 0             | 0 (of 8206; 0)            | -          | not contracted in this build
+   x_cv     exp32       1      5724 | 0             | 0 (of 5724; 0)            | -          | equivalent mutant on this input set
+   hypot32 by hypot_check2.py's own reference (exact integers; on the pairs inside the domain of HYPOT32_FINITE the result must be a binary32 number r >= 0 with
+   pred(r)^2 < x^2 + y^2 < succ(r)^2), over the same sets of binary32 pairs: not faithful, of the 1032929 pairs inside the domain: normal 0; offmfma 0; fast 0; dropped 0; n_outer 613882; n_inner 0; n_both 613882; x_ctl 0; x_mm 0; x_cv 0
+   what fast and dropped compute: the emitters' graph with the fused sites rounded once (exact arithmetic), against the build, bit for bit, on the sets the Coq graph is evaluated on:
+   dropped  exp32    with its six c + r * n each rounded once: the build differs from it on 0 of 5724 inputs; it differs from the plain graph on 2 of them
+   dropped  hypot32  with x * x unrounded in the sum (the other product rounded): the build differs from it on 0 of 8219 inputs; it differs from the plain graph on 8 of them
+   fast     exp32    with its six c + r * n each rounded once: the build differs from it on 0 of 5724 inputs; it differs from the plain graph on 2 of them
+   fast     hypot32  with x * x unrounded in the sum (the other product rounded): the build differs from it on 0 of 8219 inputs; it differs from the plain graph on 8 of them
+   narrow_sq(u) by itself, x_mm and x_cv against their control x_ctl, on the constructed u (the control held to py_narrow(u * u)):
+   x_mm     differs from x_ctl on 8 of 8 (first: u = 0x1.a887293fd6f34p-74 (bits 3b5a887293fd6f34) -> x_ctl 36c8000000000000, x_mm 36c4000000000000); x_ctl is py_narrow(u * u) on every one: yes
+   x_cv     differs from x_ctl on 8 of 8 (first: u = 0x1.0000017ffffeep+0 (bits 3ff0000017ffffee) -> x_ctl 3ff0000040000000, x_cv 3ff0000020000000); x_ctl is py_narrow(u * u) on every one: yes
+
+7. findings, function by function:
+   narrow: 2 sites of its own
+     fast     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     dropped  not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     n_outer  REFUSED: differs from the references on 40506 of 62543 inputs (set by set: 28602 of 30036; 298 of 322; 11606 of 32185)
+              first: 0x1.0000000000001p-126 (bits 3810000000000001) -> normal 3810000000000000, n_outer 3810000000000001; Python graph 3810000000000000, Coq graph 3810000000000000   [graph_agree.inputs()]
+     n_inner  REFUSED: differs from the references on 2 of 62543 inputs (set by set: 0 of 30036; 0 of 322; 2 of 32185)
+              first: 0x1.fffffffffffffp-1 (bits 3fefffffffffffff) -> normal 3ff0000000000000, n_inner 3fefffffe0000000; Python graph 3ff0000000000000, Coq graph 3ff0000000000000   [narrow_regress.inputs()]
+     n_both   REFUSED: differs from the references on 40506 of 62543 inputs (set by set: 28602 of 30036; 298 of 322; 11606 of 32185)
+              first: 0x1.0000000000001p-126 (bits 3810000000000001) -> normal 3810000000000000, n_both 3810000000000001; Python graph 3810000000000000, Coq graph 3810000000000000   [graph_agree.inputs()]
+     x_mm     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     x_cv     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+   sqrt32: no site of its own; ends in narrow
+     fast     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     dropped  not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     n_outer  REFUSED: differs from the references on 6201 of 6211 inputs (set by set: 6005 of 6011; 196 of 200)
+              first: 0x1.0000000000000p-149 (bits 36a0000000000000) -> normal 3b46a09e60000000, n_outer 3b46a09e667f3bcd; Python graph 3b46a09e60000000, Coq graph 3b46a09e60000000   [graph_agree.inputs()]
+     n_inner  equivalent mutant on this input set, and on every input of the function: 0 of 2139095040 differ from normal, build against build. Why none can: the inner site changes narrow's result only where KK*v is rounded in the next binade, that is for v within about 2^-29 (relative) below a power of two, with an odd last bit; the square root of a number of 24 significant bits, and its reciprocal, stay at least about 2^-25 away from that.
+     n_both   REFUSED: differs from the references on 6201 of 6211 inputs (set by set: 6005 of 6011; 196 of 200)
+              first: 0x1.0000000000000p-149 (bits 36a0000000000000) -> normal 3b46a09e60000000, n_both 3b46a09e667f3bcd; Python graph 3b46a09e60000000, Coq graph 3b46a09e60000000   [graph_agree.inputs()]
+     x_mm     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     x_cv     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+   rsqrt32: no site of its own; ends in narrow
+     fast     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     dropped  not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     n_outer  REFUSED: differs from the references on 6203 of 6210 inputs (set by set: 6007 of 6010; 196 of 200)
+              first: 0x1.0000000000000p-149 (bits 36a0000000000000) -> normal 4496a09e60000000, n_outer 4496a09e667f3bcc; Python graph 4496a09e60000000, Coq graph 4496a09e60000000   [graph_agree.inputs()]
+     n_inner  equivalent mutant on this input set, and on every input of the function: 0 of 2139095039 differ from normal, build against build. Why none can: the inner site changes narrow's result only where KK*v is rounded in the next binade, that is for v within about 2^-29 (relative) below a power of two, with an odd last bit; the square root of a number of 24 significant bits, and its reciprocal, stay at least about 2^-25 away from that.
+     n_both   REFUSED: differs from the references on 6203 of 6210 inputs (set by set: 6007 of 6010; 196 of 200)
+              first: 0x1.0000000000000p-149 (bits 36a0000000000000) -> normal 4496a09e60000000, n_both 4496a09e667f3bcc; Python graph 4496a09e60000000, Coq graph 4496a09e60000000   [graph_agree.inputs()]
+     x_mm     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     x_cv     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+   hypot32: 1 site of its own; ends in narrow
+     fast     equivalent mutant on this input set (1158209 pairs of binary32 numbers, 0 differ). None can inside the domain: a binary32 number has 24 significant bits, so x*x and y*y have at most 48 and are exact in binary64 (their exponents are far inside its range); fused either way, the one rounding is of the same exact sum. Outside the domain it is live: on 8 of the 13 constructed binary64 pairs the fused result differs.
+              first outside the domain: 0x1.99999c1999990p-1 (bits 3fe99999c1999990), 0x1.3333333333333p-1 (bits 3fe3333333333333) -> normal 3ff0000020000000, fast 3ff0000000000000; Python graph 3ff0000020000000, Coq graph 3ff0000020000000   [constructed, outside the domain]
+     dropped  equivalent mutant on this input set (1158209 pairs of binary32 numbers, 0 differ). None can inside the domain: a binary32 number has 24 significant bits, so x*x and y*y have at most 48 and are exact in binary64 (their exponents are far inside its range); fused either way, the one rounding is of the same exact sum. Outside the domain it is live: on 8 of the 13 constructed binary64 pairs the fused result differs.
+              first outside the domain: 0x1.99999c1999990p-1 (bits 3fe99999c1999990), 0x1.3333333333333p-1 (bits 3fe3333333333333) -> normal 3ff0000020000000, dropped 3ff0000000000000; Python graph 3ff0000020000000, Coq graph 3ff0000020000000   [constructed, outside the domain]
+     n_outer  REFUSED: differs from the references on 739162 of 1158209 inputs (set by set: 3216 of 8000; 38 of 198; 735900 of 1150003; 8 of 8)
+              first: -0x1.0388aa0000000p+72 (bits c470388aa0000000), 0x1.51c9280000000p+79 (bits 44e51c9280000000) -> normal 44e51cab60000000, n_outer 44e51cab6d0ef304; Python graph 44e51cab60000000, Coq graph 44e51cab60000000   [graph_agree.inputs()]
+     n_inner  REFUSED: differs from the references on 8 of 1158209 inputs (set by set: 0 of 8000; 0 of 198; 0 of 1150003; 8 of 8)
+              first: 0x1.fffffe0000000p-1 (bits 3fefffffe0000000), 0x1.69c23c0000000p-12 (bits 3f369c23c0000000) -> normal 3ff0000000000000, n_inner 3fefffffe0000000; Python graph 3ff0000000000000, Coq graph 3ff0000000000000   [constructed, in the domain]
+     n_both   REFUSED: differs from the references on 739162 of 1158209 inputs (set by set: 3216 of 8000; 38 of 198; 735900 of 1150003; 8 of 8)
+              first: -0x1.0388aa0000000p+72 (bits c470388aa0000000), 0x1.51c9280000000p+79 (bits 44e51c9280000000) -> normal 44e51cab60000000, n_both 44e51cab6d0ef304; Python graph 44e51cab60000000, Coq graph 44e51cab60000000   [graph_agree.inputs()]
+     x_mm     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+     x_cv     not contracted: the function holds no fused multiply-add in this build (not a plant for it)
+   exp32: 6 sites of its own; ends in narrow; two more across statements, its twelfth v * v into narrow (x_mm, x_cv)
+     fast     REFUSED: differs from the references on 2 of 5724 inputs (set by set: 0 of 5516; 0 of 206; 2 of 2)
+              first: 0x1.30b2680000000p+3 (bits 40230b2680000000) -> normal 40caaaef00000000, fast 40caaaef20000000; Python graph 40caaaef00000000, Coq graph 40caaaef00000000   [pinned (found by the scan of every input)]
+     dropped  REFUSED: differs from the references on 2 of 5724 inputs (set by set: 0 of 5516; 0 of 206; 2 of 2)
+              first: 0x1.30b2680000000p+3 (bits 40230b2680000000) -> normal 40caaaef00000000, dropped 40caaaef20000000; Python graph 40caaaef00000000, Coq graph 40caaaef00000000   [pinned (found by the scan of every input)]
+     n_outer  REFUSED: differs from the references on 2559 of 5724 inputs (set by set: 2451 of 5516; 106 of 206; 2 of 2)
+              first: 0x1.0000000000000p+0 (bits 3ff0000000000000) -> normal 4005bf0a80000000, n_outer 4005bf0a8b144951; Python graph 4005bf0a80000000, Coq graph 4005bf0a80000000   [graph_agree.inputs()]
+     n_inner  equivalent mutant on this input set, and on every input of the function: 0 of 3258020376 differ from normal, build against build. No argument is offered why: it is measured, on every input.
+     n_both   REFUSED: differs from the references on 2559 of 5724 inputs (set by set: 2451 of 5516; 106 of 206; 2 of 2)
+              first: 0x1.0000000000000p+0 (bits 3ff0000000000000) -> normal 4005bf0a80000000, n_both 4005bf0a8b144951; Python graph 4005bf0a80000000, Coq graph 4005bf0a80000000   [graph_agree.inputs()]
+     x_mm     equivalent mutant on this input set, and on every input of the function: 0 of 3258020376 differ from normal, build against build. Measured, on every input. Argued, not measured, where a difference could arise: only at an input whose rounded twelfth square lies exactly halfway between two multiples of 2^-149 (the grid v + MM rounds to), and the exact square to the side the tie does not go. The plant is live all the same: narrow_sq by itself differs from its control on 8 of 8 constructed values of u, which exp32 does not reach.
+     x_cv     equivalent mutant on this input set, and on every input of the function: 0 of 3258020376 differ from normal, build against build. Measured, on every input. Argued, not measured, where a difference could arise: only at an input whose rounded twelfth square lies exactly halfway between two binary32 numbers, and the exact square to the side the tie does not go. The plant is live all the same: narrow_sq by itself differs from its control on 8 of 8 constructed values of u, which exp32 does not reach.
+   narrow under n_outer, on its inputs of magnitude at least 2^-126 (the branch that holds the product): the result is the input itself, bit for bit, on 40524 of 40526, of which 40504 are not binary32 numbers
+   narrow under n_both, on its inputs of magnitude at least 2^-126 (the branch that holds the product): the result is the input itself, bit for bit, on 40526 of 40526, of which 40506 are not binary32 numbers
+   (the subtrahend of the outer use is 2^29 * v, or within a rounding of it, and KK*v - 2^29*v is v itself: fused, the outer subtraction returns v unrounded)
+   exp32 at x = 0x1.30b2680000000p+3: normal 40caaaef00000000 is faithful, fast 40caaaef20000000 is faithful (pred32(r) < exp(x) < succ32(r), decimal exp at 60 digits, exp_check.py's verdict)
+   exp32 at x = -0x1.a2d0360000000p+5: normal 3b36334b80000000 is faithful, fast 3b36334b60000000 is faithful (pred32(r) < exp(x) < succ32(r), decimal exp at 60 digits, exp_check.py's verdict)
+   so a faithfulness check accepts the contracted exp32 on the inputs where it differs: only a bit-for-bit comparison that reaches these inputs refuses it;
+   on the tier's own inputs for a bit-for-bit comparison of exp32 (graph_agree.inputs(), 5516 inputs; the emitters' corpus, 206 inputs) fast differs on 0: there the contraction is an equivalent mutant;
+   it is refused on the pinned inputs alone, which this test brings (found by its scan of every input).
+   hypot32 under n_outer: hypot_check2's faithfulness reference refuses 613882 of the 1032929 results inside the domain
+   hypot32 under n_inner: hypot_check2's faithfulness reference refuses 0 of the 1032929 results inside the domain: it accepts this plant (a result that differs is still a binary32 neighbour of the exact value); the bit-for-bit comparison alone refuses it
+   hypot32 under n_both: hypot_check2's faithfulness reference refuses 613882 of the 1032929 results inside the domain
+
+8. requirements:
+  ok   the emitters run in the temporary folder are the tier's orl/emit.py and orl/emit2.py, byte for byte
+  ok   run there, they write 12 files (sweep.c, sweep2.c, the five corpus laws and their inputs) and no other, each the file the tier holds in orl/gen, byte for byte
+  ok   both generated sources name the tier's flags on their Build line (clang -O2 -ffp-contract=off -fno-math-errno)
+  ok   both hold the narrow read here, once, and no other definition of narrow
+  ok   the wrappers call what the generated corpus modes call (f_narrow, f_sqrt32, f_rsqrt32, f_hypot32; narrow(g_exp32(...)))
+  ok   normal (the tier's flags): no fused multiply-add in any function under test, nor anywhere in its three objects
+  ok   offmfma and x_ctl (the controls: the tier's flags on a target that has FMA): none either
+  ok   x_ctl: its five functions have normal's arithmetic instructions, in normal's order (moving the twelfth squaring into narrow_sq changes none)
+  ok   every function under test, in every build: no call, no indirect jump, relocations to floating constants only (its listing is all of it)
+  ok   fast: a fused multiply-add in every function whose own expression has a site (hypot32, exp32)
+  ok   fast: its arithmetic is normal's with the functions' own sites fused and nothing else: each function holds as many fused multiply-adds as its expression has sites (narrow 0, sqrt32 0, rsqrt32 0, hypot32 1, exp32 6), and with each F read as m a its instructions are normal's; so the six c + r * n of exp32 are fused, and KK * v, the twelfth v * v and x * 2^-12 are not
+  ok   dropped: a fused multiply-add in every function whose own expression has a site (hypot32, exp32)
+  ok   dropped: its arithmetic is normal's with the functions' own sites fused and nothing else: each function holds as many fused multiply-adds as its expression has sites (narrow 0, sqrt32 0, rsqrt32 0, hypot32 1, exp32 6), and with each F read as m a its instructions are normal's; so the six c + r * n of exp32 are fused, and KK * v, the twelfth v * v and x * 2^-12 are not
+  ok   n_outer: a fused multiply-add in all five functions (each ends in narrow)
+  ok   n_inner: a fused multiply-add in all five functions (each ends in narrow)
+  ok   n_both: a fused multiply-add in all five functions (each ends in narrow)
+  ok   x_mm: one fused multiply-add in exp32, where the plant puts it (for narrow's v + MM), and none in the other four functions, which it does not touch
+  ok   x_cv: one fused multiply-add in exp32, where the plant puts it (for narrow's c - v), and none in the other four functions, which it does not touch
+  ok   narrow_sq by itself (the symbol the x_ builds add): m a a m a a in x_ctl; the same with one fused multiply-add in x_mm (m F a m a a) and in x_cv (m a a m F a)
+  ok   all 10 programs ran on this host (the planted ones execute FMA3 instructions)
+  ok   the scanner reports differences where two builds differ, the same count and the same first 256 as the programs run separately (65528 of 65536)
+  ok   exp32, normal against fast: every chunk ran, the inputs are the 3258020376 of the function's sweep, and every differing input is listed
+  ok   exp32, normal against n_inner: every chunk ran, the inputs are the 3258020376 of the function's sweep, and every differing input is listed
+  ok   sqrt32, normal against n_inner: every chunk ran, the inputs are the 2139095040 of the function's sweep, and every differing input is listed
+  ok   rsqrt32, normal against n_inner: every chunk ran, the inputs are the 2139095039 of the function's sweep, and every differing input is listed
+  ok   exp32, normal against x_ctl: every chunk ran, the inputs are the 3258020376 of the function's sweep, and every differing input is listed
+  ok   exp32, normal against x_mm: every chunk ran, the inputs are the 3258020376 of the function's sweep, and every differing input is listed
+  ok   exp32, normal against x_cv: every chunk ran, the inputs are the 3258020376 of the function's sweep, and every differing input is listed
+  ok   exp32, normal against x_ctl, the control of x_mm and x_cv: 0 of 3258020376 inputs differ (with the twelfth squaring moved into narrow_sq it is the same function)
+  ok   the scan of every input of exp32, normal against fast, finds the inputs this file pins (41185934, c251681b) and no other
+  ok   the constructed hypot32 inputs outside the domain are not binary32 numbers (13 pairs)
+  ok   the constructed hypot32 inputs inside the domain are binary32 numbers (8 pairs)
+  ok   every Definition of p32/Graphs.v and exp32/Graph.v was read by graph_agree's reader (9 and 4), the thirteen it expects
+  ok   normal prints what the tier's own gen/sweep.exe and gen/sweep2.exe print in corpus mode, on every input of every set (1238910 inputs, five functions)
+  ok   normal agrees with every reference on every input of every set, the constructed ones outside the domain included (1238910 inputs)
+  ok   offmfma agrees with every reference on every input of every set, the constructed ones outside the domain included (1238910 inputs)
+  ok   x_ctl agrees with every reference on every input of every set, the constructed ones outside the domain included (1238910 inputs)
+  ok   a planted build that does not contract a function leaves it as it was (agrees on every input)
+  ok   hypot32, by hypot_check2's faithfulness reference: the builds without a plant (normal, offmfma, x_ctl) are faithful on every pair inside the domain (1032929 pairs)
+  ok   fast and dropped compute the fused graphs: exp32 with its six c + r * n each rounded once, hypot32 with one product unrounded in the sum, bit for bit on every input of those sets, the inputs where the fused graph and the plain graph differ included
+  ok   x_mm and x_cv are live as functions of the value squared: on constructed u each differs from its control (x_mm on 8 of 8; x_cv on 8 of 8), and the control returns py_narrow(u * u) on every one
+  ok   every function a planted build contracts is refused there, or is an equivalent mutant with an account (21 contracted cells: 14 refused, 7 equivalent and accounted for)
+  ok   every function with a site of its own is contracted by at least one planted build (narrow: n_outer, n_inner, n_both; hypot32: fast, dropped; exp32: fast, dropped, x_mm, x_cv)
+  ok   every file the tier's ten freeze lists name (f32, p32, p32r, exp32, exp32r: FROZEN.txt, FROZEN4.txt) has its listed sha256: 201 entries
+  ok   the tier as it was: each of the 1757 files under f32, p32, p32r, exp32, exp32r, gate, libcache, orl present at the start has the same sha256 at the end; files that appeared meanwhile: 0
+FMA PLANT HELD: contracted build refused for narrow (n_outer, n_inner, n_both), exp32 (fast, dropped: on 2 of its 3258020376 inputs); equivalent mutant for hypot32 (fast, dropped: 0 of 1158209 pairs of binary32 inputs differ, and none can), exp32 (x_mm, x_cv: 0 of its 3258020376 inputs differ); no contraction site in sqrt32, rsqrt32 (none of their own; narrow's, which every function ends in, is counted under narrow)

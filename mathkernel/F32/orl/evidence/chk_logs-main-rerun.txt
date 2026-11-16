@@ -1,0 +1,37 @@
+gen/sweep.c key 9636be961f77f659; gen/sweep2.c key fe58a39d58a9618c
+count rules against the live programs on 20 small ranges: 0 differ; narrow at 7f7fffff: n=0, at ff7fffff: n=3, at 7f7ffffe: n=5
+sweeps-9636be961f77f659.log: sqrt32 64 chunks, 2139095040 inputs; rsqrt32 64 chunks, 2139095039 inputs; narrow 64 chunks, 21390950393 inputs
+sweep2-fe58a39d58a9618c.log: exp32 256 chunks, 3258020376 inputs
+exp-exhaust-fe58a39d58a9618c.log: 4096 chunks, 3258020376 inputs
+exp-exhaust-plant-fe58a39d58a9618c.log: 15 chunks, 14774808 inputs
+sweeps-a28f24687031a586.log: a log of another key (not the current program): listed, not judged
+plant sweeps-9636be961f77f659.log, one chunk line removed: 2 defects (rsqrt32: patterns 40000000..41ffffff are in no chunk); emit.py's own tally refuses this copy
+plant sweeps-9636be961f77f659.log, one chunk's count altered (n less by one): 2 defects (rsqrt32: chunk 40000000..41ffffff reports n=33554431, its range holds 33554432); emit.py's own tally ACCEPTS this copy
+plant sweeps-9636be961f77f659.log, one chunk replaced by a second copy of the one before it: 2 defects (rsqrt32: chunk 3e000000..3fffffff stands twice); emit.py's own tally ACCEPTS this copy
+plant sweep2-fe58a39d58a9618c.log, one chunk line removed: 2 defects (exp32: patterns 80000000..80ffffff are in no chunk); emit2.py's own tally refuses this copy
+plant sweep2-fe58a39d58a9618c.log, one chunk's count altered (n less by one): 2 defects (exp32: chunk 80000000..80ffffff reports n=16777215, its range holds 16777216); emit2.py's own tally refuses this copy
+plant sweep2-fe58a39d58a9618c.log, one chunk replaced by a second copy of the one before it: 3 defects (exp32: chunk 7f000000..7fffffff stands twice); emit2.py's own tally refuses this copy
+plant exp-exhaust-fe58a39d58a9618c.log, one chunk line removed: 2 defects (1 chunks are not in the log (first 804))
+plant exp-exhaust-fe58a39d58a9618c.log, one chunk's count altered (n less by one): 2 defects (chunk 804 reports n=1048575 shortcut_n=1048576 decimal_n=0, its range holds 1048576 = 1048576 + 0)
+plant exp-exhaust-fe58a39d58a9618c.log, one chunk replaced by a second copy of the one before it: 3 defects (chunk 801 stands twice)
+plant exp-exhaust-fe58a39d58a9618c.log, one input moved from decimal_n to shortcut_n: 1 defect (chunk 30a reports n=1048576 shortcut_n=1 decimal_n=1048575, its range holds 1048576 = 0 + 1048576)
+  ok   the count rule of each function is what gen/sweep.exe and gen/sweep2.exe report on 20 small ranges
+  ok   the totals follow from the rules: sqrt32 2139095040, rsqrt32 2139095039, narrow 21390950393, exp32 3258020376
+  ok   orl/exp_exhaust.py holds the segments copied here, line for line, and its XMAX_U and TOTAL
+  ok   sweeps-9636be961f77f659.log: every line well formed; sqrt32, rsqrt32, narrow each tile [0, top) exactly, no chunk twice; every chunk's n as its range holds; totals 2139095040, 2139095039, 21390950393; bad counters zero
+  ok   sweep2-fe58a39d58a9618c.log: every line well formed; exp32 each tile [0, top) exactly, no chunk twice; every chunk's n as its range holds; totals 3258020376; bad counters zero
+  ok   exp-exhaust-fe58a39d58a9618c.log: header of the current sweep2.c and sweep2.exe; chunks 000..fff each exactly once; n, shortcut_n, decimal_n as each range holds; total 3258020376; none not faithful or ambiguous
+  ok   exp-exhaust-plant-fe58a39d58a9618c.log (partial by design, 15 chunks): header current; each chunk once; n, shortcut_n, decimal_n as each range holds; every input not faithful
+  ok   plant: sweeps-9636be961f77f659.log with one chunk line removed fails
+  ok   plant: sweeps-9636be961f77f659.log with one chunk's count altered (n less by one) fails
+  ok   plant: sweeps-9636be961f77f659.log with one chunk replaced by a second copy of the one before it fails
+  ok   sweeps-9636be961f77f659.log as it is: the authors' own tally accepts it (the criterion copied here reads the log as they do)
+  ok   plant: sweep2-fe58a39d58a9618c.log with one chunk line removed fails
+  ok   plant: sweep2-fe58a39d58a9618c.log with one chunk's count altered (n less by one) fails
+  ok   plant: sweep2-fe58a39d58a9618c.log with one chunk replaced by a second copy of the one before it fails
+  ok   sweep2-fe58a39d58a9618c.log as it is: the authors' own tally accepts it (the criterion copied here reads the log as they do)
+  ok   plant: exp-exhaust-fe58a39d58a9618c.log with one chunk line removed fails
+  ok   plant: exp-exhaust-fe58a39d58a9618c.log with one chunk's count altered (n less by one) fails
+  ok   plant: exp-exhaust-fe58a39d58a9618c.log with one chunk replaced by a second copy of the one before it fails
+  ok   plant: exp-exhaust-fe58a39d58a9618c.log with one input moved from decimal_n to shortcut_n fails
+SWEEP LOGS TILE HELD: sweeps-9636be961f77f659.log (sqrt32, rsqrt32, narrow), sweep2-fe58a39d58a9618c.log (exp32), exp-exhaust-fe58a39d58a9618c.log and its plant log; 19 of 19 rows ok; plants failed as required 10 of 10

@@ -1,0 +1,61 @@
+gate4_selftest.py 7cd4585e95b8a276be8cf571c782363a2d044303a40a919094a3802ac9627ea0 on gate4.py 21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3, freeze4.py 990e8b638cb9765bb14ff2bef6d00fb043d77e14e3c20078a39760c458619093
+setup: f32 copied to /tmp/g4st/base with honest compiled files beside the sources; freeze4.py: wrote f32/FROZEN4.txt: 12 entries / anchor 53880a185dd4b23539f38a446d94f16dcb1f1cf1f69a061c78ec32c1f23ca002
+honest anchor 53880a185dd4b23539f38a446d94f16dcb1f1cf1f69a061c78ec32c1f23ca002
+    | gate4.py 21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3 judges f32 (identity f32.Identity; sources of f32) in /tmp/g4st/honest
+    | anchor 53880a185dd4b23539f38a446d94f16dcb1f1cf1f69a061c78ec32c1f23ca002
+    |   freeze list: every line is readable                            ok  12 entries
+    |   freeze list: no path is listed twice                           ok  
+    |   freeze list: every required entry is on it                     ok  12 required, 12 listed
+    |   frozen inputs unchanged                                        ok  12 files
+    |   freeze list is the anchored one                                ok  ANCHOR 53880a185dd4b235
+    |   fresh root holds only the listed sources                       ok  3 sources of 1 folders, no other file
+    |   compile f32/F32_Statement                                      ok  exit 0
+    |   compile f32/F32                                                ok  exit 0
+    |   compile f32/Identity                                           ok  exit 0
+    |   identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+    |   coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+    |   coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+    |   coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+    |   sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e
+    |   closure: every MKF library is one compiled and rechecked above ok  3 of ours in the closure
+    |   closure: every outside library passed coqchk -norec, unsafe <none> ok  295 libraries by the sha256 of their files: 295 from the log, 0 checked in this run
+    |   plant admitted refused                                         ok  compiled; PA: unexpected assumption: F32.F32_rel : F32_Statement.F32_REL; expected assumption absent: ClassicalDedekindReals.sig_forall_dec : forall P : nat -> Prop, (forall n : nat, {
+    |   plant guard refused                                            ok  compiled; PA: unexpected line: F32.loop is assumed to be guarded.
+    |   plant loose-constant refused                                   ok  F32 exit 1: File "/tmp/gate4-jplr9t_3/plant/loose-constant/f32/F32.v", line 38, characters 34-37: Error: Tactic failure: Cannot find witness.
+    |   plant shadow refused                                           ok  Identity exit 1: _3/plant/shadow/f32/Identity.v", line 3, characters 61-80: Error: The term "F32.F32_rel" has type "F32.F32_REL" while it is expected to have type "F32_Statement.F32_REL".
+    |   nothing written to the tree outside out4 and the library log   ok  34 files as they were
+    | F32 GATE4 HELD: 20 of 20  [anchor 53880a185dd4b235]
+honest run: holds  (0 libraries checked in this run, 9 s)  F32 GATE4 HELD: 20 of 20  [anchor 53880a185dd4b235]
+library log: 0 lines of the honest run added to /work/libcache/checked4.log (295 were there)
+mutant 01-statement-edited            caught  statement weakened (proof adjusted to compile), list untouched; must fail [frozen inputs unchanged]; failing rows: [frozen inputs unchanged] / [fresh root holds only the listed sources]; F32 GATE4 FAILED: 18 of 20  [anchor 53880a185dd4b235]  (10 s)
+    | frozen inputs unchanged: 2 of 12 differ from their line: f32/F32.v, f32/F32_Statement.v
+    | fresh root holds only the listed sources: not as listed: f32/F32_Statement.v, f32/F32.v
+mutant 02-statement-rehashed          caught  the same, both lines of the list re-hashed, ANCHOR the honest anchor; must fail [freeze list is the anchored one]; failing rows: [freeze list is the anchored one]; F32 GATE4 FAILED: 19 of 20  [anchor ba23713220bddb6a]  (9 s)
+    | freeze list is the anchored one: ANCHOR given '53880a185dd4b23539f38a446d94f16dcb1f1cf1f69a061c78ec32c1f23ca002', this list is ba23713220bddb6addf3842e51a7357928037b12e6bf42ffa493cafd5a517642
+mutant 03-statement-line-removed      caught  the same, the statement's line removed from the list, no ANCHOR; must fail [freeze list: every required entry is on it]; failing rows: [freeze list: every required entry is on it] / [fresh root holds only the listed sources]; F32 GATE4 FAILED: 17 of 19  [anchor eac6d387eb347cbd]  (8 s)
+    | freeze list: every required entry is on it: missing: f32/F32_Statement.v
+    | fresh root holds only the listed sources: not as listed: f32/F32_Statement.v
+mutant 04-statement-line-uppercase    caught  the same, the statement's line re-hashed with its hash in upper case, no ANCHOR; must fail [freeze list: every line is readable]; failing rows: [freeze list: every line is readable] / [freeze list: every required entry is on it] / [fresh root holds only the listed sources]; F32 GATE4 FAILED: 16 of 19  [anchor 8d664ec58c117d45]  (9 s)
+    | freeze list: every line is readable: 1 unreadable: line 3 'EEA318F0EBF918705246E3E91D709F3DF6AD68E6A0556143897F000FBA7CF299  f32/F32_Statement.v'
+    | freeze list: every required entry is on it: missing: f32/F32_Statement.v
+    | fresh root holds only the listed sources: not as listed: f32/F32_Statement.v
+mutant 05-admitted-beside-honest-vo   caught  a lemma of the proof Admitted, list re-hashed, the honest compiled F32.vo left beside the source; must fail [identity: Print Assumptions is exactly the flocq4 list]; failing rows: [identity: Print Assumptions is exactly the flocq4 list]; F32 GATE4 FAILED: 18 of 19  [anchor 6fbd0fef8c333905]  (8 s)
+    | identity: Print Assumptions is exactly the flocq4 list: unexpected assumption: F32.ulp32_gt : forall x : Rdefinitions.RbaseSymbolsImpl.R, Rdefinitions.Rle (Rdefinitions.IZR BinNums.Z0) x -> Rdefinitions.RbaseSymbolsImpl.Rlt (Rdefinitions.RbaseSymbolsImpl.Rmult x (Rdefinitions.RinvImpl.Rinv (Rdefinitions.IZR (BinNum
+mutant 06-guard-bypassed              caught  a fixpoint with its guard check bypassed proves a lemma, list re-hashed; must fail [coqchk -norec f32/F32]; failing rows: [identity: Print Assumptions is exactly the flocq4 list] / [coqchk -norec f32/F32] / [coqchk -norec f32/Identity]; F32 GATE4 FAILED: 16 of 19  [anchor bbf546d55bb52d8c]  (8 s)
+    | identity: Print Assumptions is exactly the flocq4 list: unexpected line: F32.loop is assumed to be guarded.
+    | coqchk -norec f32/F32: exit 0, unsafe sections NOT clean
+    | coqchk -norec f32/Identity: exit 0, unsafe sections NOT clean
+mutant 07-log-line-forged             caught  a line of checked4.log claims "0 clean" for one library under another hash; must check Flocq.Core.Core itself; checked in this run: ['Flocq.Core.Core']; its true line appended: True; F32 GATE4 HELD: 20 of 20  [anchor 53880a185dd4b235]  (9 s)
+mutant 08-file-written-in-tree        caught  a listed generator that also writes a file into the tree; must fail [nothing written to the tree outside out4 and the library log]; failing rows: [nothing written to the tree outside out4 and the library log]; F32 GATE4 FAILED: 19 of 20  [anchor 7580f03d0eb60c0b]  (9 s)
+    | nothing written to the tree outside out4 and the library log: 1 differ: appeared f32/written-during-the-run.txt
+mutant 09-stray-mkf-library           caught  an MKF library standing in the image's library root, required by the proof, list re-hashed; must fail [closure: every MKF library is one compiled and rechecked above]; failing rows: [closure: every MKF library is one compiled and rechecked above]; F32 GATE4 FAILED: 18 of 19  [anchor dcbe88f131b55d28]  (9 s)
+    | closure: every MKF library is one compiled and rechecked above: 3 of ours in the closure; stray: ['MKF.zz.Extra']
+mutant 10-unclean-outside-library     caught  an outside library with a bypassed guard check, required by the proof, list re-hashed; must fail [closure: every outside library passed coqchk -norec, unsafe <none>]; failing rows: [coqchk -norec f32/F32] / [coqchk -norec f32/Identity] / [closure: every outside library passed coqchk -norec, unsafe <none>]; F32 GATE4 FAILED: 16 of 19  [anchor 9243f3ce0379a753]  (8 s)
+    | coqchk -norec f32/F32: exit 0, unsafe sections NOT clean
+    | coqchk -norec f32/Identity: exit 0, unsafe sections NOT clean
+    | closure: every outside library passed coqchk -norec, unsafe <none>: 296 libraries by the sha256 of their files: 295 from the log, 1 checked in this run; not passed: Evil.Loop f7b235e0f47f: exit 0 notclean
+mutant 11-path-listed-twice           caught  the statement's line twice in the list, no ANCHOR; must fail [freeze list: no path is listed twice]; failing rows: [freeze list: no path is listed twice]; F32 GATE4 FAILED: 18 of 19  [anchor cc46d135e2c414a5]  (9 s)
+    | freeze list: no path is listed twice: twice: f32/F32_Statement.v
+every run's reading agrees with its verdict line and exit status; 8 runs without ANCHOR said "not anchored: no ANCHOR given" and had no anchor row, 4 with ANCHOR had the row: ok
+GATE4 SELFTEST HELD: 13 of 13  (110 s)
+exit 0

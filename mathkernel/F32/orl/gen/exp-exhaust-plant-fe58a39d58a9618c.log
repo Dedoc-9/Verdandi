@@ -1,0 +1,16 @@
+# exp_exhaust sweep2.c fe58a39d58a9618c sweep2.exe sha256 ef9d229ae44cc401f29c1ce9073525db0df9990d6badc99d1d30e73621128b4e prec 40 eps 1e-30 PLANT two steps up
+chunk=bf8 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=bf800000
+chunk=3f8 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=3f800000
+chunk=41a n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=41a00000
+chunk=c1a n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=c1a00000
+chunk=c00 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=c0000000
+chunk=400 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=40000000
+chunk=414 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=41400000
+chunk=c14 n=1048576 shortcut_n=0 decimal_n=1048576 not_faithful=1048576 ambiguous=0 first=c1400000
+chunk=42b n=94744 shortcut_n=0 decimal_n=94744 not_faithful=94744 ambiguous=0 first=42b00000
+chunk=ff7 n=1048576 shortcut_n=1048576 decimal_n=0 not_faithful=1048576 ambiguous=0 first=ff700000
+chunk=c2d n=1048576 shortcut_n=1048576 decimal_n=0 not_faithful=1048576 ambiguous=0 first=c2d00000
+chunk=000 n=1048576 shortcut_n=1048576 decimal_n=0 not_faithful=1048576 ambiguous=0 first=00000000
+chunk=800 n=1048576 shortcut_n=1048576 decimal_n=0 not_faithful=1048576 ambiguous=0 first=80000000
+chunk=308 n=1048576 shortcut_n=1 decimal_n=1048575 not_faithful=1048576 ambiguous=0 first=30800000
+chunk=b08 n=1048576 shortcut_n=1 decimal_n=1048575 not_faithful=1048576 ambiguous=0 first=b0800000

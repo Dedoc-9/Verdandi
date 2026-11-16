@@ -1,0 +1,25 @@
+hypot32 sampled check 2: 1150003 pairs, seed 2026111402, program gen/sweep.exe; largest input magnitude sampled 0x1.fffffe0000000p+127
+regime                 pairs in domain (an input not faithful |  outside  result finite   result not a |    plant   touched  flagged
+                                       >= 2^126)              |   domain       binary32 binary32 number |  touched in domain         
+whole range           200000    199996      3150            0 |        4              0              4 |      193       193      193
+top two binades       200000    150373    150373            0 |    49627              0          49627 |      195       148      148
+nearby exponents      200000    199571      1654            0 |      429              0            429 |      195       193      193
+subnormal and tiny    150000    150000         0            0 |        0              0              0 |      147       147      147
+one zero              150000    150000      1208            0 |        0              0              0 |      146       146      146
+domain edge           150000     74865     74865            0 |    75135          19622          55513 |      147        86       86
+top and small         100000     99924     99924            0 |       76              0             76 |       98        98       98
+known                      3         0         0            0 |        3              0              3 |        3         0        0
+all                  1150003   1024729    331174            0 |   125274          19622         105652 |     1124      1011     1011
+the three known pairs (all outside the domain: not judged):
+  (FLT_MAX, FLT_MAX)       x=0x1.fffffe0000000p+127 y=0x1.fffffe0000000p+127 -> 0x1.6a09e40000000p+128 (bits 47f6a09e40000000); a finite binary32 number: no; exact hypotenuse above 2^128, at or above 2^128 - 2^103
+  (2^127, 0x1.bb67aep127)  x=0x1.0000000000000p+127 y=0x1.bb67ae0000000p+127 -> 0x1.0000000000000p+128 (bits 47f0000000000000); a finite binary32 number: no; exact hypotenuse between FMAX32 and 2^128, at or above 2^128 - 2^103
+  (FLT_MAX, 2^116)         x=0x1.fffffe0000000p+127 y=0x1.0000000000000p+116 -> 0x1.0000000000000p+128 (bits 47f0000000000000); a finite binary32 number: no; exact hypotenuse between FMAX32 and 2^128, at or above 2^128 - 2^103
+  ok   at least 1,000,000 pairs
+  ok   inputs at or above 2^126 were sampled inside the domain (what version 1 left out)
+  ok   every pair in the domain: the result is a finite binary32 number and faithful
+  ok   the Fraction cross-check agrees with the integer verdict on each of its 1030 pairs
+  ok   the three known pairs sit at indices 0, 1024, 2048 and are outside the domain
+  ok   plant: touched pairs come from every regime
+  ok   plant: in every regime with pairs in the domain, touched pairs in the domain
+  ok   plant: every touched pair in the domain is flagged (1011 of 1011)
+HYPOT32 SAMPLE 2 HELD: 1150003 pairs; in the domain of HYPOT32_FINITE 1024729, not faithful 0; outside it 125274 (not judged), of which the result is a finite binary32 number on 19622 and not on 105652; plant (two steps up) flagged on 1011 of the 1011 in-domain pairs it touched, 1124 touched in all, from 8 of 8 regimes

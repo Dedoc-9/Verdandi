@@ -1,0 +1,2 @@
+exp32 (sweep2.exe) chunks 256/256 inputs 3258020376 of 3258020376 | narrow differs from IEEE cast: 0 | not a non-negative binary32: 0 | faithfulness: NOT judged here (exp_exhaust_nm.py, decimal)
+SWEEP HELD (program 597813397118fe8e)

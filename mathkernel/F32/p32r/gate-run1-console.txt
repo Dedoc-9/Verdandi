@@ -1,0 +1,39 @@
+  frozen inputs unchanged                                        ok  17 files
+  library cache is this image's                                  ok  sha256:e5d68b0139b5
+  fresh root holds no compiled file                              ok  3 folders copied as sources
+  compile f32/F32_Statement                                      ok  exit 0
+  compile f32/F32                                                ok  exit 0
+  compile f32/Identity                                           ok  exit 0
+  compile p32/Graphs                                             ok  exit 0
+  compile p32/P32_Statement                                      ok  exit 0
+  compile p32/T32                                                ok  exit 0
+  compile p32/Funcs                                              ok  exit 0
+  compile p32/Hypot                                              ok  exit 0
+  compile p32/Identity                                           ok  exit 0
+  compile p32r/P32R_Statement                                    ok  exit 0
+  compile p32r/Range                                             ok  exit 0
+  compile p32r/Identity                                          ok  exit 0
+  identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Graphs                                       ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/P32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/T32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Funcs                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Hypot                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec p32r/P32R_Statement                              ok  exit 0, unsafe sections <none>
+  coqchk -norec p32r/Range                                       ok  exit 0, unsafe sections <none>
+  coqchk -norec p32r/Identity                                    ok  exit 0, unsafe sections <none>
+  sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e, p32/Graphs.v 055b4602b3b9, p32/P32_Statement.v a1b2af32031e, p32/T32.v 360b5f8503fe, p32/Funcs.v 0c3ca7b51f9b, p32/Hypot.v 95590c2c88d3, p32/Identity.v ca2b754f7d2c, p32r/P32R_Statement.v 0b98724aa620, p32r/Range.v 5d10fb0d889e, p32r/Identity.v 3d8b1712343e
+  closure: every MKF library is one compiled and rechecked above ok  10 of ours in the closure
+  closure: every outside library passed coqchk -norec, unsafe <none> ok  303 libraries, 0 newly checked
+  plant admitted refused                                         ok  compiled; PA: unexpected assumption: Range.rn32_below : forall w : Rdefinitions.RbaseSymbolsImpl.R, Rdefinitions.RbaseSymbolsImpl.Rlt w P32R_Statement.OVF32 -> Rdefinitions.Rle (Generi
+  plant axiom refused                                            ok  compiled; PA: unexpected assumption: Range.hyp_big : Rdefinitions.Rle (Raux.bpow Zaux.radix2 (BinNums.Zpos (BinNums.xO (BinNums.xO (BinNums.xO (BinNums.xO (BinNums.xO (BinNums.xO (BinN
+  plant guard refused                                            ok  compiled; PA: unexpected line: Range.loop is assumed to be guarded.
+  plant loose-hypot refused                                      ok  Range exit 1: File "/tmp/gate-plant/loose-hypot/p32r/Range.v", line 179, characters 97-100: Error: Tactic failure: Cannot find witness.
+  plant loose-narrow refused                                     ok  Range exit 1: cters 71-73: Error: In environment v : R Fv : format64 v Hv : Rabs v <= OVF32 The term "Hv" has type "Rabs v <= OVF32" while it is expected to have type "Rabs v < OVF32".
+  plant shadow refused                                           ok  Identity exit 1: /gate-plant/shadow/p32r/Identity.v", line 3, characters 60-79: Error: The term "Range.p32r" has type "Range.P32R" while it is expected to have type "P32R_Statement.P32R".
+P32R GATE HELD: 36 of 36
+exit 0

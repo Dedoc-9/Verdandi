@@ -1,0 +1,488 @@
+gate_ieee64.py ac172a438cb555c489989ec538521acb6e0234a3d15d3707291403a749ecba6e judges ieee64 in /work through gate/gate4.py 21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3 on a copy of the listed files  --recheck
+  this gate is the one gate.json names                           ok  gate_ieee64.py ac172a438cb555c4
+  statement: IEEE64_Statement.v has the frozen sha256            ok  7cbcac51c912286bc9ea64ef2880cf7685ff2027e02902a5ceeae3e693e428de, the one given from outside
+  the folder's .v files are exactly the gate's files             ok  8 files
+  text: no assuming word in any source                           ok  8 files, 18 words searched, comments included
+  text: the same search finds the word in each proof plant       ok  admitted-closed Admitted; admitted-exp32 Admitted; admitted-ops Admitted; admitted-p32 Admitted; axiom-exp32 Axiom; guard bypass_check
+  identity: Identity.v types Closed.ieee64_holds by the statement's IEEE64 ok  nothing imported; the definition and one Print Assumptions
+  the tree's freeze list is the anchored one                     ok  ANCHOR 42e3891e153bafae
+  copy: the listed files, the list and this gate, nothing else   ok  82 files, each byte for byte the tree's
+gate4.py on the copy (-B /tmp/gate-ieee64-tn22ql_t/tree/gate/gate4.py ieee64 --recheck); its lines follow, each after "  | ":
+  | gate4.py 21a33b65aba9b3e900b112bf39e27373f85f37c0fe05c7e06cc84203e7bfa8f3 judges ieee64 (identity ieee64.Identity; sources of f32, p32, p32r, exp32, exp32r, ieee64) in /tmp/gate-ieee64-tn22ql_t/tree  --recheck
+  | anchor 42e3891e153bafae200b7e3b48c2573fbc4406d58fa941bd0bf1f672f51ddb42
+  |   freeze list: every line is readable                            ok  80 entries
+  |   freeze list: no path is listed twice                           ok  
+  |   freeze list: every required entry is on it                     ok  80 required, 80 listed
+  |   frozen inputs unchanged                                        ok  80 files
+  |   freeze list is the anchored one                                ok  ANCHOR 42e3891e153bafae
+  |   p32/Graphs.v is what orl/emit.py emits                         ok  
+  |   exp32/Graph.v is what orl/emit2.py emits                       ok  
+  |   exp32r/Chain.v is what exp32r/gen_range.py emits               ok  
+  |   ieee64/gate.json is what ieee64/plants/make_plants.py emits    ok  
+  |   ieee64/plants/Closed_admitted_closed.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/Closed_five_of_six.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/Closed_guard.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/EXP32_IEEE_admitted_exp32.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/EXP32_IEEE_axiom_exp32.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_0_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_1_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_210_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_2520_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_4096_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_42_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_5040_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_7_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_840_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_HH_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_KK_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_MM_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_TT_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_cst_m160_ulp.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_ieee_sel_swapped.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_ieee_sub_is_add.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_mode_add_zr.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_mode_div_na.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_mode_mul_up.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_mode_sqrt_na.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_mode_sub_dn.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_prem_exp_no_xmax.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_prem_hypot_no_range.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_prem_narrow_loose.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_prem_rsqrt_at_zero.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_prem_sqrt_no_fmax.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_shape_exp_eleven.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_shape_hypot_sub.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_shape_narrow_add.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_shape_rsqrt_mul.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/IEEE64_Statement_shape_sqrt_abs.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/Ops_admitted_ops.v is what ieee64/plants/make_plants.py emits ok  
+  |   ieee64/plants/P32_IEEE_admitted_p32.v is what ieee64/plants/make_plants.py emits ok  
+  |   fresh root holds only the listed sources                       ok  29 sources of 6 folders, no other file
+  |   compile f32/F32_Statement                                      ok  exit 0
+  |   compile f32/F32                                                ok  exit 0
+  |   compile f32/Identity                                           ok  exit 0
+  |   compile p32/Graphs                                             ok  exit 0
+  |   compile p32/P32_Statement                                      ok  exit 0
+  |   compile p32/T32                                                ok  exit 0
+  |   compile p32/Funcs                                              ok  exit 0
+  |   compile p32/Hypot                                              ok  exit 0
+  |   compile p32/Identity                                           ok  exit 0
+  |   compile p32r/P32R_Statement                                    ok  exit 0
+  |   compile p32r/Range                                             ok  exit 0
+  |   compile p32r/Identity                                          ok  exit 0
+  |   compile exp32/Graph                                            ok  exit 0
+  |   compile exp32/EXP32_Statement                                  ok  exit 0
+  |   compile exp32/Taylor                                           ok  exit 0
+  |   compile exp32/Exp32                                            ok  exit 0
+  |   compile exp32/Identity                                         ok  exit 0
+  |   compile exp32r/RANGE_Statement                                 ok  exit 0
+  |   compile exp32r/Chain                                           ok  exit 0
+  |   compile exp32r/Range                                           ok  exit 0
+  |   compile exp32r/Identity                                        ok  exit 0
+  |   compile ieee64/IEEE64_Statement                                ok  exit 0
+  |   compile ieee64/Ops                                             ok  exit 0
+  |   compile ieee64/P32_IEEE                                        ok  exit 0
+  |   compile ieee64/P32_IEEE_Check                                  ok  exit 0
+  |   compile ieee64/EXP32_IEEE                                      ok  exit 0
+  |   compile ieee64/EXP32_IEEE_Check                                ok  exit 0
+  |   compile ieee64/Closed                                          ok  exit 0
+  |   compile ieee64/Identity                                        ok  exit 0
+  |   identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  |   coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+  |   coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+  |   coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/Graphs                                       ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/P32_Statement                                ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/T32                                          ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/Funcs                                        ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/Hypot                                        ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32/Identity                                     ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32r/P32R_Statement                              ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32r/Range                                       ok  exit 0, unsafe sections <none>
+  |   coqchk -norec p32r/Identity                                    ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32/Graph                                      ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32/EXP32_Statement                            ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32/Taylor                                     ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32/Exp32                                      ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32/Identity                                   ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32r/RANGE_Statement                           ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32r/Chain                                     ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32r/Range                                     ok  exit 0, unsafe sections <none>
+  |   coqchk -norec exp32r/Identity                                  ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/IEEE64_Statement                          ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/Ops                                       ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/P32_IEEE                                  ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/P32_IEEE_Check                            ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/EXP32_IEEE                                ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/EXP32_IEEE_Check                          ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/Closed                                    ok  exit 0, unsafe sections <none>
+  |   coqchk -norec ieee64/Identity                                  ok  exit 0, unsafe sections <none>
+  |   sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e, p32/Graphs.v 055b4602b3b9, p32/P32_Statement.v a1b2af32031e, p32/T32.v 360b5f8503fe, p32/Funcs.v 0c3ca7b51f9b, p32/Hypot.v 95590c2c88d3, p32/Identity.v ca2b754f7d2c, p32r/P32R_Statement.v 0b98724aa620, p32r/Range.v 5d10fb0d889e, p32r/Identity.v 3d8b1712343e, exp32/Graph.v 1a190dc95ea8, exp32/EXP32_Statement.v 19d1fb594473, exp32/Taylor.v 9d588232966d, exp32/Exp32.v d550c2c86e43, exp32/Identity.v 598e5d702666, exp32r/RANGE_Statement.v 281b28c227a8, exp32r/Chain.v 7ab0bb2b839a, exp32r/Range.v c2736e2a0042, exp32r/Identity.v 3505af082e9d, ieee64/IEEE64_Statement.v 7cbcac51c912, ieee64/Ops.v 39c128b32248, ieee64/P32_IEEE.v 29a32ec53ac8, ieee64/P32_IEEE_Check.v 95593ee0dc46, ieee64/EXP32_IEEE.v 4cbb0dc9fc94, ieee64/EXP32_IEEE_Check.v 59e7ae17c274, ieee64/Closed.v e257c47afb7d, ieee64/Identity.v e6657acb9dd8
+  |   closure: every MKF library is one compiled and rechecked above ok  22 of ours in the closure
+  |   checked in this run: Coq.Arith.Arith 9fb6be697193905d080ca02f20435fe15eacd7c1a6337cdba08a7db51941c39f exit 0 clean
+  |   checked in this run: Coq.Arith.Arith_base e365dd301de4102b139743ff24e0e371e9cab0c7932a094355bbf7919e198b12 exit 0 clean
+  |   checked in this run: Coq.Arith.Between add3e65e4ee1c561f2d069447a9be96edb6ce03609c34e806c3ab700bb67ee5b exit 0 clean
+  |   checked in this run: Coq.Arith.Compare b66d5b278b1318e6014938518e7a3c75032ba0479369a280572707377c47b5d5 exit 0 clean
+  |   checked in this run: Coq.Arith.Compare_dec 58093a6a1d365db53414e24dfff3271d94c0f4b19df1845d07e57c28dc361592 exit 0 clean
+  |   checked in this run: Coq.Arith.EqNat 325ac958a98d466175be35d7d00f174142915220f6d1608cd5b693dadae8721e exit 0 clean
+  |   checked in this run: Coq.Arith.Factorial fa6ef3e2af682ad1949ba02f1d1232ebb78fc013b420caad2b9ceba7650c241d exit 0 clean
+  |   checked in this run: Coq.Arith.PeanoNat 2c3fea54835d8ebc34ef9bbc135ab73a864dbe254068dc1795fc645d31ac4d1c exit 0 clean
+  |   checked in this run: Coq.Arith.Peano_dec b5fb63bdc50151f4162aee7acfdbd4598f47a29d7b1cec0761a7e60c62966499 exit 0 clean
+  |   checked in this run: Coq.Arith.Wf_nat c14b1babd24d8c43be5a6131aaa7954632d3e72d624ad1798ca632730980dc51 exit 0 clean
+  |   checked in this run: Coq.Bool.Bool 79b5cbe069360c20cb5bc9e926714d38af75184f37ecf96b2d1f428a916d32eb exit 0 clean
+  |   checked in this run: Coq.Bool.Sumbool 51d1d895819e9e1e3982fb3305e632d1c8164f6120f3d42cddde8a5d6f27a194 exit 0 clean
+  |   checked in this run: Coq.Classes.CMorphisms 309d4810ec99501e726924f928663516cba414e6de1766ae56b8e0b3ef38d271 exit 0 clean
+  |   checked in this run: Coq.Classes.CRelationClasses d4739abbdc51cfdf814ce7a8ee3ab1597fcb15777b65fef962e7ffde06af84c5 exit 0 clean
+  |   checked in this run: Coq.Classes.DecidableClass b2c2353dd827250da8abb16d92f366643d04eb8854bb2d0f197b3d590bfa2b1f exit 0 clean
+  |   checked in this run: Coq.Classes.Equivalence 5763d4377ba8aa0b0e1f0511b96ed9b14ea482d58fcd1985c634deeb36b17c93 exit 0 clean
+  |   checked in this run: Coq.Classes.Init 299ea717e37b9bf62a032e30b7902d0d77f03418b2f46a476699e80afd8554e8 exit 0 clean
+  |   checked in this run: Coq.Classes.Morphisms 002c9125f6f31faf63f223504c164f5e6415e732aa782041ea93c96b412466ff exit 0 clean
+  |   checked in this run: Coq.Classes.Morphisms_Prop 5bbc54ae8eb200d53ccabc35f659baa8deb0e357f900d59120102f6273cb2e7f exit 0 clean
+  |   checked in this run: Coq.Classes.RelationClasses f3a480595bba153aea4d0160ad5a30f075aee9affe8b6419856ae4e5aa72d0c9 exit 0 clean
+  |   checked in this run: Coq.Classes.SetoidTactics 2e88fa80a781931e02cf1e6dc7e68ee99e709e72233c42278bda47423888ae8a exit 0 clean
+  |   checked in this run: Coq.Floats.FloatClass 7c7d2766e0e4f270a450ae9cf83d3f796c21908783f043f6c536ca9d49bb45d8 exit 0 clean
+  |   checked in this run: Coq.Floats.SpecFloat df4584a3585b2215071284e693a1b8429eaaa23be65403e47cf53b70ba77fb09 exit 0 clean
+  |   checked in this run: Coq.Init.Byte c1b0653cb9ba1ee21950e43d1bd2ddc921ffd7fde8b0e7ad148bcba86c93d8c4 exit 0 clean
+  |   checked in this run: Coq.Init.Datatypes 7e3f60c885f4587cba69ff5cfa993cf477141a0665410b7d1ee96a6a713d946e exit 0 clean
+  |   checked in this run: Coq.Init.Decimal c93380cd8cbe6b64689a0acdc8266fb7aa35cc8890fe117a4e2fb24a68a037af exit 0 clean
+  |   checked in this run: Coq.Init.Hexadecimal b9e604df2f7dba62fac8bb73b298952360c2eb1b01706b22c5bbe3d63bb49225 exit 0 clean
+  |   checked in this run: Coq.Init.Logic 250dbdf2e11cf175e4dbc77838f284cb001be028637ddf013a20aff353aba96d exit 0 clean
+  |   checked in this run: Coq.Init.Ltac f8537350da927674c470303b342cda44e32dde95a56af2a867da710611d94209 exit 0 clean
+  |   checked in this run: Coq.Init.Nat 475131d84ca21e26a5c3f6cd2118f8a3195267f2d9c835dab9252427c41ea990 exit 0 clean
+  |   checked in this run: Coq.Init.Notations 211cd53fa1af3e840f941db1734127fdf4895155b95e1d0fd48d96afe5b31a42 exit 0 clean
+  |   checked in this run: Coq.Init.Number 9bae16adaa0437534813ce9e6c3e7fcad4268111a7df87d91019a3c035a5bd9d exit 0 clean
+  |   checked in this run: Coq.Init.Peano ea00e627f209747f55a5e53f1de9b6d4306ade502923a372041e4bbe210a4c65 exit 0 clean
+  |   checked in this run: Coq.Init.Prelude 1d88fe157c2c60fc05b6413950ffbf79851c73ca817ee852fb1a566e7d1ea7ba exit 0 clean
+  |   checked in this run: Coq.Init.Specif 54311a8bbbaa088f9b4d78a20c08bcc8b5551ce47eb4f60e6a28454a838deea4 exit 0 clean
+  |   checked in this run: Coq.Init.Tactics b2c832b69604d752fa602c02378be60d517f8efe833657f3f4d65a0d80f147bd exit 0 clean
+  |   checked in this run: Coq.Init.Tauto 1eeb0cb19412328362121436fb2e146d6f9c869ccfa6d5f3c18cfa287ebb57dd exit 0 clean
+  |   checked in this run: Coq.Init.Wf 61a491001b78be414c8dcd0714c70288918fa64343176ddf5be1c50695889035 exit 0 clean
+  |   checked in this run: Coq.Lists.List b8081010fd390301acf3abdead597c85efc90f678f6ce233dc4c097230642680 exit 0 clean
+  |   checked in this run: Coq.Lists.ListTactics 6c8146183aad06939b90b86ff668c950c101a61bc9e3e23abaa77ff24647601d exit 0 clean
+  |   checked in this run: Coq.Logic.ClassicalFacts ca76f7671646be4c48e758bd6da7157b6f414ddce9945f89e1997c2c93993575 exit 0 clean
+  |   checked in this run: Coq.Logic.Classical_Pred_Type d2d29fc0e1674511e7ddbad2a9cfae9f5f12966e71944fdef4a164e9958b17bb exit 0 clean
+  |   checked in this run: Coq.Logic.Classical_Prop b6ee00d7e792ec35bf6cd749c3c7da33bb50f6db1ef156e9320ec4d37894f131 exit 0 clean
+  |   checked in this run: Coq.Logic.ConstructiveEpsilon 52dadac1b9567dcd382bbad18613398f9d6bfc18951eeab3ad4e8ad270f8fdeb exit 0 clean
+  |   checked in this run: Coq.Logic.Decidable cd8f7cc68b936c2bdf4fd08086d2b77be7b4e5f16a2afb2c2c6dc299d7e6e333 exit 0 clean
+  |   checked in this run: Coq.Logic.EqdepFacts 796b8e6de19252432f2382a8a4d4af28ba74da8017e9b2db9079e14f00b708e9 exit 0 clean
+  |   checked in this run: Coq.Logic.Eqdep_dec 351492db9d77c7bfcfc78049a514b455d75d2ccb6739211b20d15d866c89e39e exit 0 clean
+  |   checked in this run: Coq.Logic.FunctionalExtensionality 25b6622709469416a695435594cb454a1fd38f22eb3a5de6c704dd18ffaa04f0 exit 0 clean
+  |   checked in this run: Coq.Logic.HLevels ee207eac4564d9f997d7626a0e334aa1c49f3e54ad9a157fde0d03315eebd6b8 exit 0 clean
+  |   checked in this run: Coq.Logic.Hurkens 429413885ee815c157f2bd4732e61a14bc212720c1ac90197c6dcde434d87dd6 exit 0 clean
+  |   checked in this run: Coq.Logic.PropExtensionalityFacts 82b761634483ef618ae5a0279dbc874b02d97ad5e967db3ab2a50c7175069e9f exit 0 clean
+  |   checked in this run: Coq.NArith.BinNat 9e115a6b491fb606cfad17188a9feac1e62f597216be3c148705295dad64cfbd exit 0 clean
+  |   checked in this run: Coq.NArith.BinNatDef 1ba025a91e96de1cb20a6fadb6d1d6203c4ee2b9b96fc1c531d442164faa2742 exit 0 clean
+  |   checked in this run: Coq.NArith.NArith 4b4c3c9f30a06c32307c0f2603ba92486c2e17dbc57b67fe6955754c39324454 exit 0 clean
+  |   checked in this run: Coq.NArith.Ndiv_def 6c95584a8578f6146e5bcd6770e52b271154c4b41f1b70c9b598b3f3f18d017c exit 0 clean
+  |   checked in this run: Coq.NArith.Ngcd_def 9a6c4d7be375a53fca3b1aa88483d3e2f7c4baaf73e56e516065887a1bda7938 exit 0 clean
+  |   checked in this run: Coq.NArith.Nnat 1147ac48fdd26dce43335301d77d284541f0f6000a3e35f163e710f0cdcef2d6 exit 0 clean
+  |   checked in this run: Coq.NArith.Nsqrt_def 58434c9f6dab5707befcc24af88b524412d0f125fa2ab82fccc58614697ed34d exit 0 clean
+  |   checked in this run: Coq.Numbers.BinNums f2e25847cd7642577a3ecf11f25302a1501e0f3f2c25c386401e51342b1ec5c2 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZAdd abf6630823e815932615402b025b622e796786bcc3699748588129b245198516 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZAddOrder b16a3738c4a40d85ea770b686957a0c50288ff0dfdd5c798cf73fefb97e8213b exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZAxioms ff6004daf7a08b840190c1a2d22b89541d37ead4a10576d0c0e76300cb4ce623 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZBase 5ed33b988fb31f15fe33fed3a239cbcce419b0e5046d682398141ed1d2333c3f exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZBits d45e1adc55c0833086d539e8dc03fe5822ce78cfb45a1b7eb3751e543ac6cff9 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZDivFloor 427f28c85c44be7864c768510f9e2aced90fca4e28251a0cb2de9cf506911a6f exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZDivTrunc 121d8aa0f78ca546ecd55245509ff5702209587dc4eb116de3c53a5e58832218 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZGcd f7f2013006845c1bd7ec3335fd75ed4c96a99b22568c11653d9657aea8a0b417 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZLcm f5f32ea7c24978e7e99f3fb8e7d6a78ed85c0eb403e91cb5127ef174bca1ff60 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZLt cd5bacf66039fbb23e1866ec2cfe867d9532010f071e44b568a50fa7cca2ccc5 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZMaxMin 72b112bdf972f870405d8eebedf8cad8d59e64d58564cb52fac0a3a147ea64a7 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZMul 099d8d6874461d5d9dfbdb3e5e8572f659449fb122a03fbc82614c8dd940f606 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZMulOrder 1fce2ef2cdc9c7c39896f4c1e942082325a8d85ce03cbe3f20f1a5627413a5eb exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZParity f8ae935989911abc2edbcbfbce5b7098a5276f8c79a3165faf8b389fe02be660 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZPow f0782f8bd3273027319d5c50a06d0119d5696e96bf7ce36a843fba6a55f9daf8 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZProperties 9a7b3c0cf1d8e2de425aa32502e222c33b7d7c020d275ed4b48fb6107f677c85 exit 0 clean
+  |   checked in this run: Coq.Numbers.Integer.Abstract.ZSgnAbs e6ce9a16a0e61f9081913325dbda781b05a869f91df52bd90da65592aba4009b exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZAdd 404dc0513d8f59d07a82bf226c60767fc98dbd30959f96c0c54461c3643a358d exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZAddOrder 25095c7b51e438db5ff615cb3f7a14dd43f7e1258e772d339403ca2ad7fb56b2 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZAxioms cf16e94c242cb81b3b0ea1ff99aa26fe7a25e622d03b95ba22c9d90510c03e1f exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZBase e88d0e818a82a726c302cbadf9a60e44da6df07557c3feb38c9299d0a46bb5c1 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZBits cd75136ce28eec6cc0fe71a0539b05b7a5104a810812c71c00f657a1c2e52c23 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZDiv 16f301b710232fb8b183187cd967b594c4d2dac015a5d0d90ae33afb80981d8a exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZGcd 7dd3e27ff2035f3902d6099521144a82b42573b82fffc35044995c25ae98776d exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZLog 52a8a9a0bdc2d14b550520dda0b22997a7c675905cc3768de64f5c68c0d590d3 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZMul 1480ac0e6beef2076b593664c5f0e7b8687ed679bf05c33583f8a8d4f667a81d exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZMulOrder bfe99495beeb077fb15d09f57f573be3fd3ae6d28f03f0ec73e42fed9658b7d4 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZOrder 0b50fa702a8288b2c05155e0fae19bc043837d71fccb4f238fafb722e933ac3d exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZParity a57f67cb3493a75f044b4ac39500de2d9335f09d75ba42bcffb880f9f8fbfd1d exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZPow 5bcfa76ae1b58d50ecee5423577c4c39fab122f61f594011e8c49a75e04d7445 exit 0 clean
+  |   checked in this run: Coq.Numbers.NatInt.NZSqrt e5f100b02037c830c70d6e76241bf7ce539a2a40a4cebffc3d9929d59e4363d4 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NAdd 18e182f73015f0b13cedd02bcfc53b8a5d057e20d8089d8acc203c28a142558e exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NAddOrder 5671353dfe177b7e7d64c0391c837a38eaf3094de561e4487c94818dee13efec exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NAxioms 3ba4d421febd3b99f688aa5d17024e1519c6c422a9f430628455f18cb6e64fca exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NBase d30fac432454790f76e39e59c6846885da1d88e3d5e72ef99a7f3ba80440aa61 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NBits f2b5060f884a88b0ee83ee04bb2f7cbc4079a9b895eb591a029bcb42ed24e785 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NDiv 75d7fb8ed0a8252adf8776a4e93c61efc8318b8197aa41634c52651ff682653f exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NDiv0 517f03c4bdc59a877172234336898d53ea48cb11553899a3a8ac9285e181e873 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NGcd ea7d8eefcbdf975db5d11db4d03ea6d1f6843fa218682c81c59279cccdd136c0 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NLcm 8ae927d35518f389b7be85551807cde8eb787c6421226d6e28241d9d1a11aa7a exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NLcm0 e08ca0af8a532edf4d69e3d194322b588295d9b73bbb88ef84f3024f0c8e2d24 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NLog 7d861242cff96e895cfcb1c0791f35bb662b9cce98561fb378baffd2863c6382 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NMaxMin 0a3e4ff4ff9ade4c0963e3070e73c72b545f5a16a531844043b96afca8c2a631 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NMulOrder 1759c47c6e83029cc9673307e0adf3fa28c0beeb24a1233978a49f703880b116 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NOrder 79af9e530170cac006456710dc34e53787f9c854f5132ee568240269b08963e0 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NParity 5da2c2977745c3b9aa9f7f123cceb824c413960430a981e1a826c454ddf95903 exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NPow 4cd695e2d102e636f40d15e84a37a4b9a9da738843a8426c69e7cdb942d1eebd exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NProperties acd8f7fbf884a437d68de72f10b3841ca8469bad122cb89e3ede05e241a1cb3a exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NSqrt 0a5c139094a7ef190e8bbea6e92ef796ad8b93729c4de68d50938fcae828d30c exit 0 clean
+  |   checked in this run: Coq.Numbers.Natural.Abstract.NSub 242b6023f9bd923cceea52617b9d67302057be9d7483988ea46e11b7470f8aaf exit 0 clean
+  |   checked in this run: Coq.Numbers.NumPrelude 78542720d3a767f3cbbf9e63e01d46be09dec52361823d760c9c62af3e1bd0c7 exit 0 clean
+  |   checked in this run: Coq.PArith.BinPos df7d03e0417a23785f8e98c2b3d0d27f52422ad9146bd3b94cbfda0057b1bcea exit 0 clean
+  |   checked in this run: Coq.PArith.BinPosDef 71480b4908717959b5c6a9372c762f9514f59b61679762ec55690aeb9e4fcc45 exit 0 clean
+  |   checked in this run: Coq.PArith.PArith 5e8777e2bec75f74e631c9ae87fc7d74a900904c5581cd47bee58728fd0afcc4 exit 0 clean
+  |   checked in this run: Coq.PArith.POrderedType 86b0db325f216ce7627289c8e6b64491a1b84b35c01a1cca2ec4f6408e3a77e0 exit 0 clean
+  |   checked in this run: Coq.PArith.Pnat c339b84a6b253cab35e385008ec33809e6ef49a4277554c4d5507ede0f7966ec exit 0 clean
+  |   checked in this run: Coq.Program.Basics cd3347b2ed070ccb420ee432eadbd3b7ea8aae453873cfde4da1138fb589b1d6 exit 0 clean
+  |   checked in this run: Coq.Program.Tactics 11b3723899d173e6e90e569c1f273611ab480f1508f365e68340adf4b582f55a exit 0 clean
+  |   checked in this run: Coq.QArith.QArith f9659337ad35659edb357df2a88be37cb5320c8644ca80f853f0ca4840dc6082 exit 0 clean
+  |   checked in this run: Coq.QArith.QArith_base f21a20a8b749910a4c3decda22cf9f0c6fcb16baf5e259bfb7bdb8162bd8a48b exit 0 clean
+  |   checked in this run: Coq.QArith.QOrderedType 7f5a48b516796667df4fc2903be2b845171b5a965e2289e15b1ad450e6f5f83a exit 0 clean
+  |   checked in this run: Coq.QArith.Qabs 55698c3e4d50337a30c494cac8cc560d9d9385214301f27afa8811d644fecb40 exit 0 clean
+  |   checked in this run: Coq.QArith.Qfield 0cd006d208d9ed9ce121a794e7356583efb6ed38f8bc26bc30c5450d3561f1b2 exit 0 clean
+  |   checked in this run: Coq.QArith.Qminmax 97aeb0fff17b1f8a79d8855ae0a2af69f87b9e2c2d28f2a5c9668bcd2551f6a1 exit 0 clean
+  |   checked in this run: Coq.QArith.Qpower b634a7f46ef8a77dcbd06aa650916d9a9c70d43c419c31a27e9eb28bce86e093 exit 0 clean
+  |   checked in this run: Coq.QArith.Qreals 02bb66a110c9310c9e5c4ba6d847d5c29c06184a2b4f1235243665c8161c3d30 exit 0 clean
+  |   checked in this run: Coq.QArith.Qreduction 6db0c8cc39460dc89bd72fb241ce91d1d46b46339ee154188f853d5554a125c1 exit 0 clean
+  |   checked in this run: Coq.QArith.Qring e4143fe6f4fb9f47f651e6fa1408e5e0eb9d930fcbdf5e68b0acc57aaeaf4b08 exit 0 clean
+  |   checked in this run: Coq.QArith.Qround ae659f8632be292c764d4f8e6fc8ff28f18e99d67cefa46e5f01100fe2f8975d exit 0 clean
+  |   checked in this run: Coq.Reals.Abstract.ConstructiveAbs 30fdf1809775f1cd45331dbd0d126cdb74d7d9ca517d2bb357cbfd55e86ac0a5 exit 0 clean
+  |   checked in this run: Coq.Reals.Abstract.ConstructiveLUB efe66014597b370c6ba5376d8e85343bf9bfec577d10a296e894b85799033733 exit 0 clean
+  |   checked in this run: Coq.Reals.Abstract.ConstructiveLimits 4a55dcc02397a4b0e7320568d1bc38b7c14b404532729956e937b1e5636f89e8 exit 0 clean
+  |   checked in this run: Coq.Reals.Abstract.ConstructiveReals b49197b2d58dfd8e1b19868cc7a06ff8c2008c51dfd0df211ff1972f96157e26 exit 0 clean
+  |   checked in this run: Coq.Reals.Alembert 315782770ca75a83ca556e5c8f7b5b2480b13e7d355c3ba59234861aed0db220 exit 0 clean
+  |   checked in this run: Coq.Reals.AltSeries 9a34fac125a750aa126408f4cb082486b76b16422e8ce7b6298724f283cdc428 exit 0 clean
+  |   checked in this run: Coq.Reals.ArithProp 304cd957e1b72394fef5173716b4f40531443f51d87c0fd5a30f5b48ac4a5651 exit 0 clean
+  |   checked in this run: Coq.Reals.Binomial 41c6e93213b8e49f3580a68c3e0bac53a16fb6a3f32e70375a912e2808b27ebf exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.ConstructiveCauchyAbs 4acb5ebcf570d35673b25d6c1442775cefa5a8610c78b80d26156ec63221ec0f exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.ConstructiveCauchyReals e9a14811b0b368c927ebbc2fa1ce6d62a3f3b8f3fa0f6b86671ed453249ffa68 exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.ConstructiveCauchyRealsMult 137137d037763b51c95d80fe0e95f081184f18356029c8767c58e2dd17a651ae exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.ConstructiveExtra 805a9a7532fe957a914abd582d20dbeff3d1c3a1c95065ace952a035f5af8e5e exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.ConstructiveRcomplete f158484af4636f7b6631d8e93425b1ffdada9758bad234eea0bc9a788303f772 exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.PosExtra bbd945b79513d10a5eb8227bb43bcdaa08988452a1f524b6d24a2a7dab5ecc15 exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy.QExtra 78e50c0660889229051eadda30fae5b2f80f4f17033e84aea4e9fffefbb7410d exit 0 clean
+  |   checked in this run: Coq.Reals.Cauchy_prod 6131f61972630c605dd32656868bf4003aa60032efca123b98f7eb472fa01339 exit 0 clean
+  |   checked in this run: Coq.Reals.ClassicalDedekindReals 71aff77dc6e21ad191d59675c2a8d660c60247ba3d4b44acf6903e733904eedb exit 0 clean
+  |   checked in this run: Coq.Reals.Cos_plus 9b7e9f0b39cb71febaf9a6ff401bf8b3632b3a803a904fe6b4763c65a699eec4 exit 0 clean
+  |   checked in this run: Coq.Reals.Cos_rel dfad35c7a4c080c6d07d61d99ddeec5a6f52b67432ae29902bd84eb130079dea exit 0 clean
+  |   checked in this run: Coq.Reals.DiscrR 6c145881694c8b7825a3bfe2d2b5ec3693ef75f583c051af131747a87b309134 exit 0 clean
+  |   checked in this run: Coq.Reals.Exp_prop e47524ca31649a12941d325e85708829a7ac11bb7797ad1f267f20ac926a48a3 exit 0 clean
+  |   checked in this run: Coq.Reals.Integration fa949b56bc0e0a4157434076ec87e589e31f428a5366ed71f979f8ce78610d3d exit 0 clean
+  |   checked in this run: Coq.Reals.MVT 39f3fc2ad9efde02a4317de3426b3b9fafc1f029a8714d047c6fc52ade901d96 exit 0 clean
+  |   checked in this run: Coq.Reals.Machin ac05f1b0d7f2406162ead3fe8cf30b874308569945df2fff5df1059770f06145 exit 0 clean
+  |   checked in this run: Coq.Reals.NewtonInt e3ffd80380253ed33dae7a0827456e8a687c85082e641d2393e7ccd016b8b8aa exit 0 clean
+  |   checked in this run: Coq.Reals.PSeries_reg 2782fab509fa83c78a6355c5b290ce7b631c965db267711f8c280fec7597ae75 exit 0 clean
+  |   checked in this run: Coq.Reals.PartSum 5a323e64a8ca9fa6e061021703164a19e128eb0c84e7a049561705c2a50170f5 exit 0 clean
+  |   checked in this run: Coq.Reals.RIneq 478403a85fb4737f487f4df5665f66959b9abfe9f5d97bba3c481f2de21ecc8a exit 0 clean
+  |   checked in this run: Coq.Reals.RList af2a8790ffe3f0b7a6ddcd5d0306c0bb6010b5ddb7a74da2dcccfd493ee0b124 exit 0 clean
+  |   checked in this run: Coq.Reals.R_Ifp 58b7b423c842c558bddb4325c55200552344cc90d0f50285861568282a094336 exit 0 clean
+  |   checked in this run: Coq.Reals.R_sqr 870daf92e89e28ee07501b4cf37003102ea7f28870f84da8fd5201afe852f0d2 exit 0 clean
+  |   checked in this run: Coq.Reals.R_sqrt 1f83d8657fb441efa4346769767b2ca9697cbde6f2fc270b9859e21f12b922b6 exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis ce2b34aa808fc070fa448da06a0dcb07cda2d9134212197d7be3b52fdfee1242 exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis1 e2e9fd0a8a289f845cb01db4801cb02968e42b637c86de316bc172ddc4993076 exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis2 9bcc6b62881e42ccf8a746876ba6baa106a23354b01903e3a16b8a94b705041e exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis3 5103eae9b3c0474456ed08a307f8004ac1006269af97a1de2128fa583db72ea8 exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis4 3cb4d3026a0c60ba14f5fd45c945684706fdcf243e22e26170c10f7d59b53f1e exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis5 9bb5a6b6c1a24730ff4936945f0226d39d3e768861741a33a6ebe926b11cdf39 exit 0 clean
+  |   checked in this run: Coq.Reals.Ranalysis_reg f336b913c10456c4861a27f2c3f91a29a09d558ceb7082ef9cf105d7b5f5417e exit 0 clean
+  |   checked in this run: Coq.Reals.Ratan 818a16736b5eb4879e1a6ed5fecfccd33dd32bb4fe7c374b3e8337b28678bcdd exit 0 clean
+  |   checked in this run: Coq.Reals.Raxioms f8f09b2ef4851220fbcd675edf3365566f82a42fd94917cecf106d024c5c49e0 exit 0 clean
+  |   checked in this run: Coq.Reals.Rbase 30f2932a9fc9134da49737a996da6bd4747339cc61889bd85b47fd39b321d057 exit 0 clean
+  |   checked in this run: Coq.Reals.Rbasic_fun d8e879cdce777cfcd0be69a63ecf7ef4dbcaefaa2f4a9f7df75f441a67064b2e exit 0 clean
+  |   checked in this run: Coq.Reals.Rcomplete 5e0a03ae82807dda354fd3e7c7550f2e5afdc6cb6a3083034ddfb1a17b124356 exit 0 clean
+  |   checked in this run: Coq.Reals.Rdefinitions 7c1eea948ef79ad52e8c69738dfc2b44192da58f53c8a527d889f53f006ade60 exit 0 clean
+  |   checked in this run: Coq.Reals.Rderiv ae636dff4607338761aefcbeb334702e008208ab1759be013fc0514965ac9b86 exit 0 clean
+  |   checked in this run: Coq.Reals.Reals b72e84ce9e00e7fe368ac51fd1983ec11461527a211c62ff51b73c95c4d39da3 exit 0 clean
+  |   checked in this run: Coq.Reals.Rfunctions 6ff93fd45ead077969ea1282c00f9f343245db87e950d8e9154489e35a21cf81 exit 0 clean
+  |   checked in this run: Coq.Reals.Rgeom 41b1054ceab95e4b04701ae642b93a64a35e70f7268952d30f0a522ab1286b75 exit 0 clean
+  |   checked in this run: Coq.Reals.RiemannInt 7bc9b5ead8e60eae60cdf233e9eced63d2b1558d0833cb54bb50dbac3a118f6e exit 0 clean
+  |   checked in this run: Coq.Reals.RiemannInt_SF 3b391e1789fbf69630a0ce00dfedaab7c4df717c469703ceec5fc807c21e4303 exit 0 clean
+  |   checked in this run: Coq.Reals.Rlimit 5fc0034ee65062ebe9bd9badbb8d0363a6c84046eba7be36400da94c9e99344d exit 0 clean
+  |   checked in this run: Coq.Reals.Rpow_def 0115c7a17feb93134dd7589133d7156d6d1f9b492ba8d369255c81258a89044e exit 0 clean
+  |   checked in this run: Coq.Reals.Rpower 4fed86473a1b8f6b7a733c3597850af04765b84f6c73236035f2fdbf8cf999ea exit 0 clean
+  |   checked in this run: Coq.Reals.Rprod 203b407d922d1d95f852b654b086a768af7f8012380d26090a749ea9a290551d exit 0 clean
+  |   checked in this run: Coq.Reals.Rregisternames d2542e9ff325dbe94ce45fa08e6475b95314aedcfd8e51cd3593515c310dca4c exit 0 clean
+  |   checked in this run: Coq.Reals.Rseries 0a80c34a554de8981bc6b510bb6ba20fa8466b0d5603b9da390216bca62a09b2 exit 0 clean
+  |   checked in this run: Coq.Reals.Rsigma b6f929483d677d50b2f9211c50b0ae9b47bd8072410bc7e0724680abd5653154 exit 0 clean
+  |   checked in this run: Coq.Reals.Rsqrt_def 00d095a6d5cc50ccd5caca294567959719a0e20b898bb546c7c8492543022ba1 exit 0 clean
+  |   checked in this run: Coq.Reals.Rtopology ab6b95b9a8e1be59ee128102de0ae4a8e6f9600b5a13f0de5b35efd6aca93e2b exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo 9741209812c3f12ce408422ce052bb62b334a53edfbdea3311146d9ef5828e32 exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo1 195d27059494fc8f029fba049db5cd4df758b1262b5b0a27ca2de28c1148a7a8 exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_alt 0e5ca0495395c46181dc587268a70521df999c299e552562cdde82a66e726155 exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_calc e224ef63facfae78b8cbf7e202f768e04d4af116322b7950c092b0ab6a29a88d exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_def 58ef502bc848e0409ec108fcc2b82348994a7654ab4cc365969237e8a90a7b1b exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_facts f3f60f295818feff947bbf094713ff16a897b930586b9b682eed2d19e12f82b5 exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_fun c84da31a189d4784a53455366b5d158c3251b4197e8f1910740dc65b82cdbc2c exit 0 clean
+  |   checked in this run: Coq.Reals.Rtrigo_reg 87b4c0deb965895063cf3ce96fd14ecbd5765a910821039204a18b929609ce47 exit 0 clean
+  |   checked in this run: Coq.Reals.SeqProp 32608ed17e4360b2bb114669aa97cc44ab21058757bfd937260fdfb203ff5f50 exit 0 clean
+  |   checked in this run: Coq.Reals.SeqSeries c07f8ef60edb7910f5bae854a6b7896a13b0b31ba44c8bbd36d7a410ca0c5a0c exit 0 clean
+  |   checked in this run: Coq.Reals.SplitAbsolu 41d0f6191cc6d699f4651705d3bf55687f01ce10fc5cf6ee0da166dfe24d89fe exit 0 clean
+  |   checked in this run: Coq.Reals.SplitRmult b97a2b419180bba00c6736afc8bda57e571c0668548ef5c7bd8be7490f6cc5b6 exit 0 clean
+  |   checked in this run: Coq.Reals.Sqrt_reg 8187dabb87e53d30e16db6938f8e23f85c3a67d9efc8b7d2ba973103e73bd5fd exit 0 clean
+  |   checked in this run: Coq.Relations.Operators_Properties 96c2e24cb571cf8cc42bffb09dc291cfcfcff7720d5ca9cfe8ff0d9346a6456c exit 0 clean
+  |   checked in this run: Coq.Relations.Relation_Definitions 11080484cc3682f893cb21d868b073715f783c73c3fe2e08958ba54a634fbf83 exit 0 clean
+  |   checked in this run: Coq.Relations.Relation_Operators 32e59c7b1a7f122f557916d70099846dd4fa671615d41ea1e72b1e1edb3ae3da exit 0 clean
+  |   checked in this run: Coq.Relations.Relations 84a0c5615ca39bced8bf42707afeef93d3176e5a5d9a49fe59048a77f5973d73 exit 0 clean
+  |   checked in this run: Coq.Setoids.Setoid 5c9f4472026ab1ae93f7f84728c66b5b35f9ec00072e529844cb40a6caef5a7b exit 0 clean
+  |   checked in this run: Coq.Structures.Equalities 4621d3efe800ea326ef341492e771e485b5aef96e50851eded11a1214e164ddc exit 0 clean
+  |   checked in this run: Coq.Structures.GenericMinMax d73c7616adf0533f60e6a0c3fbbaa5372f931f77afc92fc6f512e5c9dd09b39e exit 0 clean
+  |   checked in this run: Coq.Structures.Orders d69e0f8518b2cc7d0722a6849455ac34f09f729979a9f789ab2ed4c4d7383016 exit 0 clean
+  |   checked in this run: Coq.Structures.OrdersFacts 120d74d7ea1c692954f2a9017e813a23f102dfd4a1cf4069f74bc9b8f7bb97ea exit 0 clean
+  |   checked in this run: Coq.Structures.OrdersTac 5388d036101bc8f533c20eee7431aebc4d12bb0654524e50530f3cfc3847b380 exit 0 clean
+  |   checked in this run: Coq.ZArith.BinInt 357169922978d95da3dab9391d86c0248622edc6374167458af43df64e28cd2c exit 0 clean
+  |   checked in this run: Coq.ZArith.BinIntDef 45eac3a5ec42bc44ee87e7a7256095916bc5106f2b05b51b544e2c62157c64f1 exit 0 clean
+  |   checked in this run: Coq.ZArith.Wf_Z ebc9185686dbc4a8181b214c1eaf4040da4c72a7d5e74d4bab5116d3989cad62 exit 0 clean
+  |   checked in this run: Coq.ZArith.ZArith 6d13a4dc32e16bfabffaa1c562c8df663e998f9c9ed6d419167e5034c2403255 exit 0 clean
+  |   checked in this run: Coq.ZArith.ZArith_base 587e2acce91e03d8ec6c7b466bf5062ec37a50bfd8882b003eb562d50277a9ae exit 0 clean
+  |   checked in this run: Coq.ZArith.ZArith_dec 2b36153eb4ef8aa62d309c9a7563adaa7248d01460f7c27cbc4da5de6696fb6b exit 0 clean
+  |   checked in this run: Coq.ZArith.Zabs 031833172344a3d36662343cb50f5571f5052b2c24254db3ee1382e08753b137 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zbitwise e0efe93bc48ad3435efa020f7dba8a572283164ce339e2cf8d1ac7284a7a3432 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zbool 9f4284eacebc3523fe6c03b6c633e8c9d47ee28bc88c2b0c71833dd494e6caf6 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zcompare 1e783dec5c79b7fb1bb0c51e3e9e63780187376af7564dbe3250cdd5f2287b35 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zcomplements 11931332a2dab575073e4a56ed03d531935a267881615263ac1119cf658edfdf exit 0 clean
+  |   checked in this run: Coq.ZArith.Zdiv 1ab8d5e5fe669bd2668bd4c28095c3a455eabf940afb35c5e389f9ae331d89b2 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zeven 35b1a258e4f56bb1439ee940c7910ad8928b7c131e75aff781c1b8d0a09b9999 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zhints dcf3499d10a233aac6450fe4e9259698f7d128eac6bd14c99ea8509c131e6c63 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zmax 9875972c23b6faf7db643a077a0dbe24bb1d4f683782110d4746ce2f78d783ee exit 0 clean
+  |   checked in this run: Coq.ZArith.Zmin 74c8a0c93d4c83bfa05e4fff3ecc0ec185d2b1f0fa82fade5a414c9d83136d79 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zminmax 040f53018a378d0a3c5e742433dbf4103c72c443aa3607aef84ea0cbebf8e5eb exit 0 clean
+  |   checked in this run: Coq.ZArith.Zmisc 1d0154fd69ebea0e2ca7dc2cd39281d6aca7c617d524658b6ce946c8df503952 exit 0 clean
+  |   checked in this run: Coq.ZArith.Znat ac528c1426139fb2c0e189d83ef7f01afe55b1df0e77465505623192f4885c5e exit 0 clean
+  |   checked in this run: Coq.ZArith.Znumtheory c83e4cc0558d8db63366d688ac0a3546866d9f582d6b660adc84bc1b80b13bc8 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zorder d36aee337a916ff38f2d6c79d5e6f84c3b71a3fdbef78ad2c05b5fde55d4a26f exit 0 clean
+  |   checked in this run: Coq.ZArith.Zpow_def 0e0ce193a4720230d8534c9fdaa1af174001971408dc4f98238aaacda6a7d5c5 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zpow_facts 53890cab2c0690d81ae96f66dfaa8e117faf2c8e3e4d0598579956a72a3165d4 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zpower 0b54a11f92026ff2114b1472cc0558dc2081c8d2a19832b23c354dfaad6655c9 exit 0 clean
+  |   checked in this run: Coq.ZArith.Zquot 39bc58e6f2ffbd30a96cee57c0ed974cc326d60f5bdf125932cfe5cf5deffb91 exit 0 clean
+  |   checked in this run: Coq.ZArith.auxiliary d17101bb01f728d3d14b1515d8ceb471f121f9d572013e879d4d8feaacf42d03 exit 0 clean
+  |   checked in this run: Coq.btauto.Algebra 7148e0d66660e266758e2b74ac24c33107cc742089f887bc64ab6ac3c69591be exit 0 clean
+  |   checked in this run: Coq.btauto.Btauto c331d6b671ee093eb06fc64ea9ef27455f9a423a05c91bd4e653c72fb1590604 exit 0 clean
+  |   checked in this run: Coq.btauto.Reflect ecdef29e6abe2e0e4d746c76cc63ebb4e20bfad966313d42aea8442b16830be0 exit 0 clean
+  |   checked in this run: Coq.micromega.DeclConstant 6812deb3fb27ade948757e732f5e2393f3583fa15d3140749cb27991e7aca400 exit 0 clean
+  |   checked in this run: Coq.micromega.Env 3ce71765d829e5f240d636239b994bac0526c8c4660a4182cb73bcace041389e exit 0 clean
+  |   checked in this run: Coq.micromega.EnvRing 496b630f00d273db68614bfe4e9d0223415d5691f3d6a6f874111889826960cb exit 0 clean
+  |   checked in this run: Coq.micromega.Fourier e4d9382655c6a45a65a37ffe6019d87882b78e55b6b7ada517cd4fdc7d26b200 exit 0 clean
+  |   checked in this run: Coq.micromega.Fourier_util 294d866d1243fd176e04baa03abc4af4ecbb863ab3590c561f8f29d5c818cb59 exit 0 clean
+  |   checked in this run: Coq.micromega.Lia da4edf72be910a94eef741a8a8929738291015e42f6360884389f3d0bce32961 exit 0 clean
+  |   checked in this run: Coq.micromega.Lqa 224a98306d05b3e0f764979ab8a5ac2e6aea83519e9fa6d95a8d6520e60cf78b exit 0 clean
+  |   checked in this run: Coq.micromega.Lra 7aea1b9ca94d8e4ef18ef6e8043f60d2aafcdb76d0b44b0872aefeeabe54cdc8 exit 0 clean
+  |   checked in this run: Coq.micromega.OrderedRing 2c4987da4c4e095f26e9bb358a1337a3693123292eb19193414702d661292364 exit 0 clean
+  |   checked in this run: Coq.micromega.Psatz a04ba85acd5d168595acd249bbdd7e93eb064d118648806884908a69e1d1a06e exit 0 clean
+  |   checked in this run: Coq.micromega.QMicromega bc2ffa17e7fd29308f0356444dc2ada48d30278289f85ef1c3c4d787315f0cc7 exit 0 clean
+  |   checked in this run: Coq.micromega.RMicromega c844586459846581471e3dd749098013d696c4cd0a7a8fbbcf020182ff0eaadb exit 0 clean
+  |   checked in this run: Coq.micromega.Refl 8a7d05d1434fa945d9bba7f88f3ed9eb77a70d4ea51f088efab98ab4b55c48b2 exit 0 clean
+  |   checked in this run: Coq.micromega.RingMicromega 427afca35cec5f18aa9bbb734c4f75e826891c2b72f47e7fa6b56efeae0b5ff6 exit 0 clean
+  |   checked in this run: Coq.micromega.Tauto dca1575cc4b3fe9f000ff954f16fd05c4a561072c5ac9c10bdfa6883cd1b1ed2 exit 0 clean
+  |   checked in this run: Coq.micromega.VarMap 80f92f2ad7f994ba8d2aebcc4474743c014744b7c7ab4df59b3022597357ea30 exit 0 clean
+  |   checked in this run: Coq.micromega.ZArith_hints 2504c8899219e088dfeca8c7368d449055c9269e16079533f7ee14a3cee60328 exit 0 clean
+  |   checked in this run: Coq.micromega.ZCoeff 6c3fa33854c82ba37c320117c5366a5765d4a4e5f6f349413d995a505d68ef3c exit 0 clean
+  |   checked in this run: Coq.micromega.ZMicromega 4d07e513448f3f7a527d79a16f6c4c7e23e749db0910c6526e9f6c6453288813 exit 0 clean
+  |   checked in this run: Coq.micromega.Zify 8a876191dd6f7b0238f3428dea616a3b718f35eb5e45d6394366bad250f3a869 exit 0 clean
+  |   checked in this run: Coq.micromega.ZifyClasses d6b994a073046fb59c4d1f4c272978e27c5b256e7c97030a26676cc48cec6d65 exit 0 clean
+  |   checked in this run: Coq.micromega.ZifyInst e84509a0360a570c4a2288a0017ceecde032a2251a43d4f523b9865345cf9cc2 exit 0 clean
+  |   checked in this run: Coq.micromega.Ztac da01251d671effcc87ef57e033dc036cbb9f723b250755e2506bb7b75ee51341 exit 0 clean
+  |   checked in this run: Coq.omega.OmegaLemmas 8f8892940e374a5a644a90ea16cdd71d9c3722b5a434b5e5f1443c00e087c57d exit 0 clean
+  |   checked in this run: Coq.omega.PreOmega df76c2a96557ffd8ff7049097c19e0323561479a50cc2f6783057c5c28d2e842 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.ArithRing 07c7606046c439dcc4fc306a897c6fdf13f2fabc81d69e3fa1ca2c745ded8c44 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.BinList c48cc34137b8b1c6dd722f743fe4f969604d6543b6b8f1513b6b0acf49103296 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Field a82199083d518edcfae2e117afa0c5d6cbdddc274a88fbedbab9ca692634dfb9 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Field_tac ad3ec0d3adf2919dad4bc402eaa960d6f8d396a3a6ff157f3ec7913e0c3c5623 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Field_theory 4e6c09e0588ef94de49a9bc1bd23487b9df8416cd9faa3ce348e3e4dc5b5c39b exit 0 clean
+  |   checked in this run: Coq.setoid_ring.InitialRing 9419a5a6e4d47bda36413b281485438885491a822e4a1518c5647b5655648e8d exit 0 clean
+  |   checked in this run: Coq.setoid_ring.NArithRing a8de99df35d885680ad679abb509fba663ef421a9ff9c88d7f1747478c11c168 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.RealField 7e0e261a3a54839ef35d44b96c9b2f84486fbd563787623c12fcca513bd9223e exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Ring 2a06a89d89214ea3036f17783b60e21e99d1d51ed102099d6d9a78bfe52f0886 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Ring_base 40fd2dd1c279af4f6fd222731eda63a2f2508cfbf606f51f86e415a5e4012753 exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Ring_polynom 22b033955a89ae98f2702ca6a291022fdd35ecc2955e5ccd2679b1270cb0ac3c exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Ring_tac d1278297b52d49f5e3083cc3a0938c6beac231e6a78527cc668703794569ae5d exit 0 clean
+  |   checked in this run: Coq.setoid_ring.Ring_theory de920707467cf2e7fe2a1736555c8228f089735060d6644a1c6634d913924f8d exit 0 clean
+  |   checked in this run: Coq.setoid_ring.ZArithRing 79f04543da0a43c5bc8e4597f9cd13981e47ddfde1b78acabc5679ef958b576c exit 0 clean
+  |   checked in this run: Coq.ssr.ssrclasses 4ec696b01d03d5fded86262974e7179f5b319afe6f353218e18c8a462a9833d3 exit 0 clean
+  |   checked in this run: Coq.ssr.ssrsetoid ad8b4729f1d220b49819f2ecbf335de4aa528c58a61fad358fb88bd104a696b4 exit 0 clean
+  |   checked in this run: Coq.ssr.ssrunder f38a3de14bebf20a98d989cb448f33122966d8050f182223691311e7887ec97a exit 0 clean
+  |   checked in this run: Flocq.Calc.Bracket 277dff9cebeaac53165e634630f74b9ab37408aac9dcd244a1c4b0a15e9bc82b exit 0 clean
+  |   checked in this run: Flocq.Calc.Div a5d7ac69b862b68d3cdcb8aae3584eeb4a15e834017fdd26eac9eb1fcb5f3a6f exit 0 clean
+  |   checked in this run: Flocq.Calc.Operations c1854350de709010390000deb214462e91f21f2cf5d2fa662df19c4a66495f40 exit 0 clean
+  |   checked in this run: Flocq.Calc.Round aad5d4ded7588eb48231aa3c9770f936fac7b00f23f9577489c3338e69fcf100 exit 0 clean
+  |   checked in this run: Flocq.Calc.Sqrt 4bd9ccf57018605dce4b29948f45bd20f881154986d9f357d0f4883bc43ec478 exit 0 clean
+  |   checked in this run: Flocq.Core.Core c83955edd8ca9bb6204f768022f5f786fd0860c0a9484fc7cde2c03a1ee756f5 exit 0 clean
+  |   checked in this run: Flocq.Core.Defs e489772be93e3e13bbb066a8f6c28393de38e6d10d43de02c69617b67c96ca73 exit 0 clean
+  |   checked in this run: Flocq.Core.Digits f72ef047d63b12f4eb9754220e270a3b686319bd9bd7a196821e6c36345120d5 exit 0 clean
+  |   checked in this run: Flocq.Core.FIX 70f62917c3e1e84815a2af87c6e11ce353c532cc835e95c2cd86dd9f44022cda exit 0 clean
+  |   checked in this run: Flocq.Core.FLT 2d5f836d33e49c785383527172873cb3b7c34ac1c913be7b9c3d28649ce71206 exit 0 clean
+  |   checked in this run: Flocq.Core.FLX 84be218e71432f61bdbdfdc660286bc0b991a947681ac918c1e5a4b4d4ee8b58 exit 0 clean
+  |   checked in this run: Flocq.Core.Float_prop 91cb7fb698c12c3cc36b6360fdca9613cb2d85009cc290d762caeb93f1747d14 exit 0 clean
+  |   checked in this run: Flocq.Core.Generic_fmt 4008d2e487454ca4680efa61634d73f0c70a189291d63a647303d3ff0c501af2 exit 0 clean
+  |   checked in this run: Flocq.Core.Raux 056825574702b03e0ba53eadf64cb317b373ff8a0a0102173356441abc0f8442 exit 0 clean
+  |   checked in this run: Flocq.Core.Round_NE 116858dda4dc5ba25489424a6a2bb0fc197263fcf3c66a2d6d5a613f79701b35 exit 0 clean
+  |   checked in this run: Flocq.Core.Round_pred aea4e2d7a74310e2fac9d7b366731d8a9aafcbd247bf934c53501b10f44f548e exit 0 clean
+  |   checked in this run: Flocq.Core.Ulp ac3688e2c1d0f1d0698e4d8dcce29bab1eec009c4f8a5e27db48e91c78d9a201 exit 0 clean
+  |   checked in this run: Flocq.Core.Zaux a7dcec14fa5ac9b6c384bc9ad8ce04ee7c68f1009f10172d937e03035989b8bc exit 0 clean
+  |   checked in this run: Flocq.IEEE754.BinarySingleNaN be3fc4a824ba1d7a1ab02ba29bbd394f218f7d0a4b80aabfa85599e1b76a8fe0 exit 0 clean
+  |   checked in this run: Flocq.Pff.Pff 1f0cc2ac332cccb9ee91cc285183e1017e4052bb5322c1533b2eb251d1079ea2 exit 0 clean
+  |   checked in this run: Flocq.Pff.Pff2Flocq 112e4fb37aadc738b9cc987680575a5073a5236ac61fbe90295dedb9d3c4320d exit 0 clean
+  |   checked in this run: Flocq.Pff.Pff2FlocqAux ebb5f845b566f86bb03d7548bc9797b2f4dce0f90b7855bd10db530ec71f21d2 exit 0 clean
+  |   checked in this run: Flocq.Prop.Mult_error a0f91a39e1d16aac3d57d6b24bf72ad78c09b5d87f04e979a17f01c9c21ce61d exit 0 clean
+  |   checked in this run: Flocq.Prop.Plus_error b11e3a133b4796a527ab71b9919b0056a37bbd414efb5e3b112f7ad2af68363c exit 0 clean
+  |   checked in this run: Flocq.Prop.Relative e466585614a955e844225533f6b87545f50217eeed71a9cdddb45e376e82c22c exit 0 clean
+  |   checked in this run: Flocq.Prop.Sterbenz da8ef7a45ba30b103c2ba55d8c82dd4915b888331b189a73cd58fef71ee15105 exit 0 clean
+  |   closure: every outside library passed coqchk -norec, unsafe <none> ok  308 libraries by the sha256 of their files: 0 from the log, 308 checked in this run
+  |   plant admitted-closed refused                                  ok  compiled; PA: unexpected assumption: Closed.ieee64_holds : IEEE64_Statement.IEEE64; expected assumption absent: ClassicalDedekindReals.sig_forall_dec : forall P : nat -> Prop, (forall 
+  |   plant admitted-exp32 refused                                   ok  compiled; PA: unexpected assumption: EXP32_IEEE.sq_back : forall s B : Rdefinitions.RbaseSymbolsImpl.R, Generic_fmt.generic_format Zaux.radix2 (FLT.FLT_exp (BinNums.Zneg (BinNums.xO (B
+  |   plant admitted-ops refused                                     ok  compiled; PA: unexpected assumption: Ops.op_div : forall x y : IEEE64_Statement.b64, BinarySingleNaN.is_finite x = true -> BinarySingleNaN.B2R y <> Rdefinitions.IZR BinNums.Z0 -> Rdefi
+  |   plant admitted-p32 refused                                     ok  compiled; PA: unexpected assumption: P32_IEEE.narrow_inv : forall v : Rdefinitions.RbaseSymbolsImpl.R, Generic_fmt.generic_format Zaux.radix2 (FLT.FLT_exp (BinNums.Zneg (BinNums.xO (Bi
+  |   plant axiom-exp32 refused                                      ok  compiled; PA: unexpected assumption: EXP32_IEEE.exp_fin : forall x : Rdefinitions.RbaseSymbolsImpl.R, P32R_Statement.finite32 (Graph.g_exp32 x)
+  |   plant cst-0-ulp refused                                        ok  Ops exit 1: File "/tmp/gate4-0x2owzat/plant/cst-0-ulp/ieee64/Ops.v", line 213, characters 4-15: Error: Unable to unify "0" with "B2R (B754_finite false 1 (-1074) eq_refl)".
+  |   plant cst-1-ulp refused                                        ok  Ops exit 1: p/gate4-0x2owzat/plant/cst-1-ulp/ieee64/Ops.v", line 214, characters 45-56: Error: Unable to unify "(1 * 2 ^ 52)%Z" with "SpecFloat.cond_Zopp false (Z.pos (2 ^ 52 + 1))".
+  |   plant cst-210-ulp refused                                      ok  Ops exit 1: 2owzat/plant/cst-210-ulp/ieee64/Ops.v", line 220, characters 47-58: Error: Unable to unify "(210 * 2 ^ 45)%Z" with "SpecFloat.cond_Zopp false (Z.pos (210 * 2 ^ 45 + 1))".
+  |   plant cst-2520-ulp refused                                     ok  Ops exit 1: zat/plant/cst-2520-ulp/ieee64/Ops.v", line 218, characters 48-59: Error: Unable to unify "(2520 * 2 ^ 41)%Z" with "SpecFloat.cond_Zopp false (Z.pos (2520 * 2 ^ 41 + 1))".
+  |   plant cst-4096-ulp refused                                     ok  Ops exit 1: zat/plant/cst-4096-ulp/ieee64/Ops.v", line 216, characters 48-59: Error: Unable to unify "(4096 * 2 ^ 40)%Z" with "SpecFloat.cond_Zopp false (Z.pos (4096 * 2 ^ 40 + 1))".
+  |   plant cst-42-ulp refused                                       ok  Ops exit 1: -0x2owzat/plant/cst-42-ulp/ieee64/Ops.v", line 221, characters 46-57: Error: Unable to unify "(42 * 2 ^ 47)%Z" with "SpecFloat.cond_Zopp false (Z.pos (42 * 2 ^ 47 + 1))".
+  |   plant cst-5040-ulp refused                                     ok  Ops exit 1: zat/plant/cst-5040-ulp/ieee64/Ops.v", line 217, characters 48-59: Error: Unable to unify "(5040 * 2 ^ 40)%Z" with "SpecFloat.cond_Zopp false (Z.pos (5040 * 2 ^ 40 + 1))".
+  |   plant cst-7-ulp refused                                        ok  Ops exit 1: te4-0x2owzat/plant/cst-7-ulp/ieee64/Ops.v", line 222, characters 45-56: Error: Unable to unify "(7 * 2 ^ 50)%Z" with "SpecFloat.cond_Zopp false (Z.pos (7 * 2 ^ 50 + 1))".
+  |   plant cst-840-ulp refused                                      ok  Ops exit 1: 2owzat/plant/cst-840-ulp/ieee64/Ops.v", line 219, characters 47-58: Error: Unable to unify "(840 * 2 ^ 43)%Z" with "SpecFloat.cond_Zopp false (Z.pos (840 * 2 ^ 43 + 1))".
+  |   plant cst-HH-ulp refused                                       ok  Ops exit 1: /gate4-0x2owzat/plant/cst-HH-ulp/ieee64/Ops.v", line 212, characters 81-92: Error: Unable to unify "(1 * 2 ^ 52)%Z" with "SpecFloat.cond_Zopp false (Z.pos (2 ^ 52 + 1))".
+  |   plant cst-KK-ulp refused                                       ok  Ops exit 1: t/cst-KK-ulp/ieee64/Ops.v", line 209, characters 64-75: Error: Unable to unify "(536870913 * 2 ^ 23)%Z" with "SpecFloat.cond_Zopp false (Z.pos (536870913 * 2 ^ 23 + 1))".
+  |   plant cst-MM-ulp refused                                       ok  Ops exit 1: e4-0x2owzat/plant/cst-MM-ulp/ieee64/Ops.v", line 210, characters 77-88: Error: Unable to unify "(3 * 2 ^ 51)%Z" with "SpecFloat.cond_Zopp false (Z.pos (3 * 2 ^ 51 + 1))".
+  |   plant cst-TT-ulp refused                                       ok  Ops exit 1: /gate4-0x2owzat/plant/cst-TT-ulp/ieee64/Ops.v", line 211, characters 81-92: Error: Unable to unify "(1 * 2 ^ 52)%Z" with "SpecFloat.cond_Zopp false (Z.pos (2 ^ 52 + 1))".
+  |   plant cst-m160-ulp refused                                     ok  Ops exit 1: owzat/plant/cst-m160-ulp/ieee64/Ops.v", line 215, characters 49-60: Error: Unable to unify "(-160 * 2 ^ 45)%Z" with "SpecFloat.cond_Zopp true (Z.pos (160 * 2 ^ 45 + 1))".
+  |   plant five-of-six refused                                      ok  Identity exit 1: /ieee64/Identity.v", line 4, characters 66-96: Error: The term "Closed.ieee64_holds" has type "Closed.IEEE64" while it is expected to have type "IEEE64_Statement.IEEE64".
+  |   plant guard refused                                            ok  compiled; PA: unexpected line: Closed.loop is assumed to be guarded.
+  |   plant ieee-sel-swapped refused                                 ok  Ops exit 1: Ops.v", line 146, characters 38-49: Error: In environment a, b, c, d : b64 Fa : is_finite a = true Fb : is_finite b = true H : B2R a < B2R b Unable to unify "c" with "d".
+  |   plant ieee-sub-is-add refused                                  ok  Ops exit 1: nite (Bminus mode_NE x y) = true The term "H2" has type "is_finite (Bminus mode_NE x y) = true" while it is expected to have type "is_finite (o_sub ieee_ops x y) = true".
+  |   plant mode-add-zr refused                                      ok  Ops exit 1: finite (Bplus mode_NE x y) = true The term "H2" has type "is_finite (Bplus mode_NE x y) = true" while it is expected to have type "is_finite (o_add ieee_ops x y) = true".
+  |   plant mode-div-na refused                                      ok  Ops exit 1: s_finite (Bdiv mode_NE x y) = true The term "H2" has type "is_finite (Bdiv mode_NE x y) = true" while it is expected to have type "is_finite (o_div ieee_ops x y) = true".
+  |   plant mode-mul-up refused                                      ok  Ops exit 1: true && true)%bool The term "H2" has type "is_finite (Bmult mode_NE x y) = (true && true)%bool" while it is expected to have type "is_finite (o_mul ieee_ops x y) = true".
+  |   plant mode-sqrt-na refused                                     ok  Ops exit 1: mode_NE x) = round radix2 (SpecFloat.fexp 53 1024) (round_mode mode_NE) (sqrt (B2R x))" while it is expected to have type "B2R (o_sqrt ieee_ops x) = RN64 (sqrt (B2R x))".
+  |   plant mode-sub-dn refused                                      ok  Ops exit 1: nite (Bminus mode_NE x y) = true The term "H2" has type "is_finite (Bminus mode_NE x y) = true" while it is expected to have type "is_finite (o_sub ieee_ops x y) = true".
+  |   plant prem-exp-no-xmax refused                                 ok  EXP32_IEEE exit 1: File "/tmp/gate4-0x2owzat/plant/prem-exp-no-xmax/ieee64/EXP32_IEEE.v", line 156, characters 21-38: Error: No product even after head-reduction.
+  |   plant prem-hypot-no-range refused                              ok  P32_IEEE exit 1: File "/tmp/gate4-0x2owzat/plant/prem-hypot-no-range/ieee64/P32_IEEE.v", line 179, characters 23-51: Error: No product even after head-reduction.
+  |   plant prem-narrow-loose refused                                ok  P32_IEEE exit 1: File "/tmp/gate4-0x2owzat/plant/prem-narrow-loose/ieee64/P32_IEEE.v", line 87, characters 77-80: Error: Tactic failure: Cannot find witness.
+  |   plant prem-rsqrt-at-zero refused                               ok  P32_IEEE exit 1:  b64 Fb : is_finite b = true Hf : format32 (B2R b) H0 : 0 <= B2R b H1 : B2R b <= FMAX32 The term "H0" has type "0 <= B2R b" while it is expected to have type "?r1 < ?r2".
+  |   plant prem-sqrt-no-fmax refused                                ok  P32_IEEE exit 1: File "/tmp/gate4-0x2owzat/plant/prem-sqrt-no-fmax/ieee64/P32_IEEE.v", line 124, characters 22-42: Error: No product even after head-reduction.
+  |   plant shape-exp-eleven refused                                 ok  IEEE64_Statement exit 1: := RN64 (s8 * s8) in let s10 := RN64 (s9 * s9) in let s11 := RN64 (s10 * s10) in RN64 (s11 * s11))" while it is expected to have type "G_exp32 R model_ops x = g_exp32 x".
+  |   plant shape-hypot-sub refused                                  ok  IEEE64_Statement exit 1: = G_hypot32 R model_ops x y" while it is expected to have type "G_hypot32 R model_ops x y = g_hypot32 x y" (cannot unify "G_hypot32 R model_ops x y" and "g_hypot32 x y").
+  |   plant shape-narrow-add refused                                 ok  IEEE64_Statement exit 1: rrow R model_ops v = G_narrow R model_ops v" while it is expected to have type "G_narrow R model_ops v = narrow v" (cannot unify "G_narrow R model_ops v" and "narrow v").
+  |   plant shape-rsqrt-mul refused                                  ok  IEEE64_Statement exit 1: del_ops x = G_rsqrt32 R model_ops x" while it is expected to have type "G_rsqrt32 R model_ops x = g_rsqrt32 x" (cannot unify "G_rsqrt32 R model_ops x" and "g_rsqrt32 x").
+  |   plant shape-sqrt-abs refused                                   ok  IEEE64_Statement exit 1:  R model_ops x = G_sqrt32 R model_ops x" while it is expected to have type "G_sqrt32 R model_ops x = g_sqrt32 x" (cannot unify "G_sqrt32 R model_ops x" and "g_sqrt32 x").
+  |   nothing written to the tree outside out4 and the library log   ok  82 files as they were
+  | IEEE64 GATE4 HELD: 148 of 148  [anchor 42e3891e153bafae]
+  gate4.py on the copy is the tree's, byte for byte, and the one run ok  gate/gate4.py 21a33b65aba9b3e9
+  gate4.py on the copy: exit 0, HELD, every row ok               ok  IEEE64 GATE4 HELD: 148 of 148  [anchor 42e3891e153bafae]
+  gate4.py on the copy: the rows this folder needs, no other     ok  148 rows; 38 plants refused (a shape 5, b constant 14, c premise 5, d mode 5, e proof 7, ieee operation 2)
+  outside libraries: every one checked by coqchk in this run     ok  308 libraries, none taken from a log
+Print Assumptions of MKF.ieee64.Identity.identity_check, as coqc wrote it (ieee64/out4/ieee64.Identity.out, sha256 13033407998ebaac9b41d5b45179fd1cb64535e3048bcdfb04398ef4a12730cd):
+    Axioms:
+    ClassicalDedekindReals.sig_not_dec : forall P : Prop, {~ ~ P} + {~ P}
+    ClassicalDedekindReals.sig_forall_dec :
+      forall P : nat -> Prop,
+      (forall n : nat, {P n} + {~ P n}) ->
+      {n : nat | ~ P n} + {forall n : nat, P n}
+    FunctionalExtensionality.functional_extensionality_dep :
+      forall (A : Type) (B : A -> Type) (f g : forall x : A, B x),
+      (forall x : A, f x = g x) -> f = g
+    Classical_Prop.classic : forall P : Prop, P \/ ~ P
+  nothing written to the tree outside ieee64/out4                ok  3838 files as they were
+IEEE64 GATE HELD: 13 of 13 rows here, gate4.py 148 of 148 on the copy  [anchor 42e3891e153bafae]
+exit 0

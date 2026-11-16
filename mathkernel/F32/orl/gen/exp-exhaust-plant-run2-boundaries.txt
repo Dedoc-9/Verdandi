@@ -1,0 +1,3 @@
+premises of the three shortcuts and the zero rule hold in decimal (10 checks)
+exp-exhaust-plant-fe58a39d58a9618c.log: 7 of 7 chunks logged (7 this run, 11 s), 0 left
+EXP32 EXHAUSTIVE PLANT (two binary32 steps up) CAUGHT ON EVERY INPUT: chunks 7, inputs 6386200, shortcut inputs 4194306, decimal-checked inputs 2191894, not faithful 6386200, ambiguous 0, first failing pattern 00000000

@@ -1,0 +1,4 @@
+premises of the three shortcuts and the zero rule hold in decimal (10 checks)
+exp-exhaust-597813397118fe8e.log: 4096 of 4096 chunks logged (4096 this run, 1753 s), 0 left
+EXP32 EXHAUSTIVE (decimal) HELD: chunks 4096, inputs 3258020376, shortcut inputs 2645557250, decimal-checked inputs 612463126, not faithful 0, ambiguous 0
+exit 0

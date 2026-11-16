@@ -1,0 +1,44 @@
+  frozen inputs unchanged                                        ok  20 files
+  library cache is this image's                                  ok  sha256:e5d68b0139b5
+  exp32/Graph.v is what orl/emit2.py emits                       ok  
+  fresh root holds no compiled file                              ok  3 folders copied as sources
+  compile f32/F32_Statement                                      ok  exit 0
+  compile f32/F32                                                ok  exit 0
+  compile f32/Identity                                           ok  exit 0
+  compile p32/Graphs                                             ok  exit 0
+  compile p32/P32_Statement                                      ok  exit 0
+  compile p32/T32                                                ok  exit 0
+  compile p32/Funcs                                              ok  exit 0
+  compile p32/Hypot                                              ok  exit 0
+  compile p32/Identity                                           ok  exit 0
+  compile exp32/Graph                                            ok  exit 0
+  compile exp32/EXP32_Statement                                  ok  exit 0
+  compile exp32/Taylor                                           ok  exit 0
+  compile exp32/Exp32                                            ok  exit 0
+  compile exp32/Identity                                         ok  exit 0
+  identity: Print Assumptions is exactly the flocq4 list         ok  4 axioms
+  coqchk -norec f32/F32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/F32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec f32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Graphs                                       ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/P32_Statement                                ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/T32                                          ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Funcs                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Hypot                                        ok  exit 0, unsafe sections <none>
+  coqchk -norec p32/Identity                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Graph                                      ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/EXP32_Statement                            ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Taylor                                     ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Exp32                                      ok  exit 0, unsafe sections <none>
+  coqchk -norec exp32/Identity                                   ok  exit 0, unsafe sections <none>
+  sources judged: f32/F32_Statement.v 098937171e5e, f32/F32.v 68d34d8ac681, f32/Identity.v a342c0b3283e, p32/Graphs.v 055b4602b3b9, p32/P32_Statement.v a1b2af32031e, p32/T32.v 360b5f8503fe, p32/Funcs.v 0c3ca7b51f9b, p32/Hypot.v 95590c2c88d3, p32/Identity.v ca2b754f7d2c, exp32/Graph.v 1a190dc95ea8, exp32/EXP32_Statement.v 19d1fb594473, exp32/Taylor.v 9d588232966d, exp32/Exp32.v d550c2c86e43, exp32/Identity.v 598e5d702666
+  closure: every MKF library is one compiled and rechecked above ok  11 of ours in the closure
+  closure: every outside library passed coqchk -norec, unsafe <none> ok  303 libraries, 0 newly checked
+  plant admitted refused                                         ok  compiled; PA: unexpected assumption: Exp32.sq_exp : forall t s D : Rdefinitions.RbaseSymbolsImpl.R, Rdefinitions.Rle (Rbasic_fun.Rabs (Rdefinitions.Rminus s (Rtrigo_def.exp t))) (Rdefi
+  plant clamp-170 refused                                        ok  Exp32 exit 1: lse x : R Fx1 : format32 x1 Bx1 : -160 <= x1 <= 160 Cx : x1 = x \/ x < -160 /\ x1 = -160 Unable to unify "x1 / 4096" with "(if Rlt_dec x (-170) then -170 else x) / 4096".
+  plant coefficient-43 refused                                   ok  Exp32 exit 1: File "/tmp/gate-plant/coefficient-43/exp32/Exp32.v", line 121, characters 43-52: Error: Found no subterm matching "RN64 (v1 / 5040)" in the current goal.
+  plant eleven-squarings refused                                 ok  Exp32 exit 1: 32_sq y - exp x) <= / 137438953472 * exp x" while it is expected to have type "Rabs (y - exp x) <= ?r2" (cannot unify "Rabs (exp32_sq y - exp x)" and "Rabs (y - exp x)").
+  plant hand-edited-graph refused                                ok  the planted file is not the generator's output
+  plant shadow refused                                           ok  Identity exit 1: adow/exp32/Identity.v", line 3, characters 63-93: Error: The term "Exp32.exp32_faithful" has type "Exp32.EXP32" while it is expected to have type "EXP32_Statement.EXP32".
+  plant tail-axiom refused                                       ok  compiled; PA: unexpected assumption: Taylor.exp_poly7 : forall r : Rdefinitions.RbaseSymbolsImpl.R, Rdefinitions.Rle (Rbasic_fun.Rabs r) (Rdefinitions.Rdiv (Rdefinitions.IZR (BinNums.Z
+EXP32 GATE HELD: 42 of 42

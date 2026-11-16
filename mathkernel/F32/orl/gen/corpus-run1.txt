@@ -1,0 +1,4 @@
+sqrt32   200 inputs | arbiter: reference COMPLETED, c99/python/rust agree | orlog = native C = python graph = IEEE cast: yes
+rsqrt32  200 inputs | arbiter: reference COMPLETED, c99/python/rust agree | orlog = native C = python graph = IEEE cast: yes
+hypot32  197 inputs | arbiter: reference COMPLETED, c99/python/rust agree | orlog = native C = python graph = IEEE cast: yes
+CORPUS AGREEMENT HELD
