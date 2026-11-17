@@ -8,6 +8,8 @@ at the end of this page.
 
 integrity is not truth; declared is not verified; built is not adopted.
 
+Read `LIMITATIONS.md` first: what the five functions do not state, and what their sweeps do not cover.
+
 Every record here was made on one machine. Its operating system, processor and toolchain are stated at the opening of
 `CLAIMS.md`.
 
